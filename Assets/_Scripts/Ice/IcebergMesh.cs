@@ -98,12 +98,20 @@ public class IcebergMesh : MathMesh<SuperleggeraVertex> {
 		Vertex<SuperleggeraVertex> foundVertex = null;
 		Edge foundEdge = new Edge();
 		
-		_TryFindAngleStitch( ref edge, ref foundEdge, ref foundVertex );
+		var shouldFlip = _TryFindAngleStitch( edge, ref foundEdge, ref foundVertex );
 		if( foundVertex == null ) {
-			_TryFindDistanceStitch( edge, searchRadius, ref foundEdge, ref foundVertex );
+			shouldFlip = _TryFindDistanceStitch( edge, searchRadius, ref foundEdge, ref foundVertex );
 		}
 		
 		if( foundVertex != null ) {
+			if( shouldFlip ) {
+				Extensions.TimeLogError( "Flipping burgers" );
+				foundVertex = edge.NonSharedVertex( foundEdge );
+				var savedEdge = edge;
+				edge = foundEdge;
+				foundEdge = savedEdge;
+			}
+			
 			_Stitch( edge, foundEdge, foundVertex );
 		}
 		else {
@@ -116,38 +124,58 @@ public class IcebergMesh : MathMesh<SuperleggeraVertex> {
 		}
 	}
 	
-	private void _TryFindAngleStitch( ref Edge edge, ref Edge foundEdge, ref Vertex<SuperleggeraVertex> foundVertex ) {
+	private bool _TryFindAngleStitch( Edge edge, ref Edge foundEdge, ref Vertex<SuperleggeraVertex> foundVertex ) {
 		var direction = edge.Direction;
 		var midpoint = edge.Midpoint;
+		var shouldFlip = false;
 		
 		foreach( var outerEdge in m_outerEdges ) {
 			if( !outerEdge.SharesVertex( edge ) ) {
 				continue;
 			}
 			
+			var vertex = outerEdge.NonSharedVertex( edge );
+			var vertices = new Vertex<SuperleggeraVertex>[] {
+				edge.V1,
+				edge.V2,
+				vertex
+			};
+			
+			var trianglePresent = false;
+			foreach( var tris in m_triangles ) {
+				if( tris.HasVertices( vertices ) ) {
+					trianglePresent = true;
+					break;
+				}
+			}
+			
+			if( trianglePresent ) {
+				continue;
+			}
+			
 			var angle = Vector3.Angle( edge.Direction, outerEdge.Direction );
 			Draw.RayFromTo( edge.V1.Position, edge.V2.Position, Palette.yellow, 1f, 2f );
 			
+			// Note: bad blood if the tris already exists between the two.
 			if( angle > 130f ) {
-				foundVertex = outerEdge.NonSharedVertex( edge );
+				foundVertex = vertex;
 				foundEdge = outerEdge;
 				
-				var vertex = outerEdge.NonSharedVertex( edge );
-				var cross = Vector3.Cross( direction, vertex.Position - midpoint );
-				if( Vector3.Angle( Vector3.up, cross ) < 30f ) {
-					foundEdge = edge;
-					edge = outerEdge;
+				if( vertex == outerEdge.V2 ) {
+					shouldFlip = true;
 				}
 				Draw.RayFromTo( edge.Midpoint, foundVertex.Position, Palette.red, 1f, 2f );
-				return;
+				return shouldFlip;
 			}
 		}
+		return shouldFlip;
 	}
 	
-	private void _TryFindDistanceStitch( Edge edge, float searchRadius, ref Edge foundEdge, ref Vertex<SuperleggeraVertex> foundVertex ) {
+	private bool _TryFindDistanceStitch( Edge edge, float searchRadius, ref Edge foundEdge, ref Vertex<SuperleggeraVertex> foundVertex ) {
 		var direction = edge.Direction;
 		var midpoint = edge.Midpoint;
 		var distance = float.MaxValue;
+		var shouldFlip = false;
 		
 		foreach( var outerEdge in m_outerEdges ) {
 			if( !outerEdge.SharesVertex( edge ) ) {
@@ -165,8 +193,14 @@ public class IcebergMesh : MathMesh<SuperleggeraVertex> {
 				distance = currentDistance;
 				foundVertex = vertex;
 				foundEdge = outerEdge;
+				
+				if( vertex == outerEdge.V2 ) {
+					shouldFlip = true;
+				}
 			}
 		}
+		
+		return shouldFlip;
 	}
 	
 	private void _Stitch( Edge edge, Edge stitchTo, Vertex<SuperleggeraVertex> byVertex ) {
@@ -188,7 +222,7 @@ public class IcebergMesh : MathMesh<SuperleggeraVertex> {
 	}
 	
 	private void _Expand( Edge edge, Vector3 position ) {
-		Extensions.TimeLogError( "[Expanding]" );
+		// Extensions.TimeLogError( "[Expanding]" );
 		var newVertex = AddVertex( position );
 		var vertices = new Vertex<SuperleggeraVertex>[] {
 			edge.V1,
