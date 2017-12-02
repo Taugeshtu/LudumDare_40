@@ -38,12 +38,13 @@ public class IcebergMesh : MathMesh<SimpleVertex> {
 	}
 	
 	public void Split( Vector3 position, Vector3 direction ) {
-		var plane = new Plane( direction, position );
+		var shift = Vector3.Project( position, direction );
+		var plane = new Plane( shift, -shift.magnitude );
 		
 		var trisCopy = new List<Triangle<SimpleVertex>>( m_triangles );
 		var drifters = new List<Triangle<SimpleVertex>>();
 		foreach( var tris in trisCopy ) {
-			var drift = tris.TrySplit( plane );
+			var drift = tris.TrySplit( ref plane );
 			if( drift != null ) {
 				drifters.AddRange( drift );
 			}
