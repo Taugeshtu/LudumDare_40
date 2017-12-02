@@ -4,6 +4,8 @@ using MathMeshes;
 
 public class IcebergGenerator : MonoBehaviour {
 	[SerializeField] private Material m_material;
+	[SerializeField] private float m_genRadius = 3f;
+	[SerializeField] private float m_stitchRadius = 5f;
 	[SerializeField] private int m_startIterations = 40;
 	[SerializeField] private Vector2 m_coercion = Vector2.up *0.5f;
 	
@@ -30,7 +32,7 @@ public class IcebergGenerator : MonoBehaviour {
 		iceberg.Init( prep );
 		
 		for( var i = 0; i < iterations; i++ ) {
-			iceberg.Mesh.SpawnTriangle();
+			iceberg.Mesh.SpawnTriangle( m_genRadius, m_stitchRadius );
 		}
 		
 		iceberg.Mesh.Coerce( m_coercion.x, m_coercion.y );
@@ -58,7 +60,7 @@ public class IcebergGenerator : MonoBehaviour {
 	}
 	
 	private void _GenIteration( IcebergMesh mesh ) {
-		mesh.SpawnTriangle();
+		mesh.SpawnTriangle( m_genRadius, m_stitchRadius );
 		mesh.WriteToMesh();
 	}
 #endregion

@@ -48,10 +48,7 @@ public class IcebergMesh : MathMesh<SimpleVertex> {
 	
 	
 #region Public
-	public void SpawnTriangle() {
-		var genRadius = 3f;
-		var stitchRadius = 4.2f;
-		
+	public void SpawnTriangle( float genRadius, float stitchRadius ) {
 		if( m_outerEdges.Count == 0 ) {
 			_SpawnFirst( genRadius );
 			return;
