@@ -4,13 +4,15 @@ using MathMeshes;
 
 public class IcebergGenerator : MonoBehaviour {
 	[SerializeField] private Material m_material;
+	[SerializeField] private int m_startIterations = 40;
+	[SerializeField] private Vector2 m_coercion = Vector2.up *0.5f;
 	
 	private Iceberg m_generated;
 	
 #region Implementation
 	void Update() {
 		if( m_generated == null ) {
-			m_generated = Generate();
+			m_generated = Generate( m_startIterations );
 		}
 		
 		if( Input.GetKeyDown( KeyCode.G ) ) {
@@ -21,10 +23,19 @@ public class IcebergGenerator : MonoBehaviour {
 	
 	
 #region Public
-	public Iceberg Generate() {
+	public Iceberg Generate( int iterations ) {
 		var prep = _PrepareMesh();
+		
 		var iceberg = prep.Filter.gameObject.AddComponent<Iceberg>();
 		iceberg.Init( prep );
+		
+		for( var i = 0; i < iterations; i++ ) {
+			iceberg.Mesh.SpawnTriangle();
+		}
+		
+		iceberg.Mesh.Coerce( m_coercion.x, m_coercion.y );
+		iceberg.Mesh.WriteToMesh();
+		
 		return iceberg;
 	}
 #endregion
@@ -47,7 +58,7 @@ public class IcebergGenerator : MonoBehaviour {
 	}
 	
 	private void _GenIteration( IcebergMesh mesh ) {
-		mesh.SpawwnTriangle();
+		mesh.SpawnTriangle();
 		mesh.WriteToMesh();
 	}
 #endregion

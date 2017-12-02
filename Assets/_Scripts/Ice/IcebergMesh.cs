@@ -2,15 +2,15 @@
 using System.Collections.Generic;
 using MathMeshes;
 
-public class IcebergMesh : MathMesh<SuperleggeraVertex> {
+public class IcebergMesh : MathMesh<SimpleVertex> {
 	private struct Edge {
-		public Vertex<SuperleggeraVertex> V1;
-		public Vertex<SuperleggeraVertex> V2;
+		public Vertex<SimpleVertex> V1;
+		public Vertex<SimpleVertex> V2;
 		
 		public Vector3 Direction { get { return (V2.Position - V1.Position); } } 
 		public Vector3 Midpoint { get { return (V1.Position + V2.Position) /2; } }
 		
-		public Edge( Vertex<SuperleggeraVertex> v1, Vertex<SuperleggeraVertex> v2 ) {
+		public Edge( Vertex<SimpleVertex> v1, Vertex<SimpleVertex> v2 ) {
 			V1 = v1;
 			V2 = v2;
 		}
@@ -26,7 +26,7 @@ public class IcebergMesh : MathMesh<SuperleggeraVertex> {
 			return false;
 		}
 		
-		public Vertex<SuperleggeraVertex> NonSharedVertex( Edge other ) {
+		public Vertex<SimpleVertex> NonSharedVertex( Edge other ) {
 			// Note: this code assumes there's exactly 1 shared vertex
 			if( V1 == other.V1 || V1 == other.V2 ) { return V2; }
 			if( V2 == other.V1 || V2 == other.V2 ) { return V1; }
@@ -37,6 +37,8 @@ public class IcebergMesh : MathMesh<SuperleggeraVertex> {
 	private List<Edge> m_outerEdges = new List<Edge>();
 	// private List<Triangle<SuperleggeraVertex>> m_outerTris = new List<Triangle<SuperleggeraVertex>>();
 	
+	public bool ShouldDraw = false;
+	
 #region Implementation
 	public IcebergMesh( MeshFilter meshFilter, MeshCollider collider, bool immediate )
 		: this( meshFilter, 1, collider, immediate ) {}
@@ -46,7 +48,7 @@ public class IcebergMesh : MathMesh<SuperleggeraVertex> {
 	
 	
 #region Public
-	public void SpawwnTriangle() {
+	public void SpawnTriangle() {
 		var genRadius = 3f;
 		var stitchRadius = 4.2f;
 		
@@ -58,6 +60,15 @@ public class IcebergMesh : MathMesh<SuperleggeraVertex> {
 		var edge = m_outerEdges.Pick();
 		_SpawnFrom( edge, genRadius, stitchRadius );
 		_Draw();
+	}
+	
+	public void Coerce( float min, float max ) {
+		foreach( var vertex in m_vertices ) {
+			var height = Random.Range( min, max );
+			vertex.Properties.Position = vertex.Position.WithY( height );
+		}
+		
+		SplitTriangles();
 	}
 #endregion
 	
@@ -82,6 +93,10 @@ public class IcebergMesh : MathMesh<SuperleggeraVertex> {
 	}
 	
 	private void _Draw() {
+		if( !ShouldDraw ) {
+			return;
+		}
+		
 		foreach( var edge in m_outerEdges ) {
 			Draw.RayFromTo( edge.V1.Position, edge.V2.Position, Palette.aquamarine, 1f, 2f );
 		}
@@ -95,7 +110,7 @@ public class IcebergMesh : MathMesh<SuperleggeraVertex> {
 		// Draw.Circle( edge.V2.Position, Vector3.up, searchRadius, Palette.orange, 24, 2f );
 		// Draw.RayFromTo( edge.V1.Position, edge.V2.Position, Palette.green, 2f, 2f );
 		
-		Vertex<SuperleggeraVertex> foundVertex = null;
+		Vertex<SimpleVertex> foundVertex = null;
 		Edge foundEdge = new Edge();
 		
 		var shouldFlip = _TryFindAngleStitch( edge, ref foundEdge, ref foundVertex );
@@ -105,7 +120,7 @@ public class IcebergMesh : MathMesh<SuperleggeraVertex> {
 		
 		if( foundVertex != null ) {
 			if( shouldFlip ) {
-				Extensions.TimeLogError( "Flipping burgers" );
+				// Extensions.TimeLogError( "Flipping burgers" );
 				foundVertex = edge.NonSharedVertex( foundEdge );
 				var savedEdge = edge;
 				edge = foundEdge;
@@ -120,11 +135,14 @@ public class IcebergMesh : MathMesh<SuperleggeraVertex> {
 			cross2 += Random.insideUnitCircle.X0Y() *0.5f *genRadius;
 			
 			_Expand( edge, midpoint + cross2 );
-			Draw.Ray( midpoint, cross2, Palette.violet, 0.5f, 2f );
+			
+			if( ShouldDraw ) {
+				Draw.Ray( midpoint, cross2, Palette.violet, 0.5f, 2f );
+			}
 		}
 	}
 	
-	private bool _TryFindAngleStitch( Edge edge, ref Edge foundEdge, ref Vertex<SuperleggeraVertex> foundVertex ) {
+	private bool _TryFindAngleStitch( Edge edge, ref Edge foundEdge, ref Vertex<SimpleVertex> foundVertex ) {
 		var direction = edge.Direction;
 		var midpoint = edge.Midpoint;
 		var shouldFlip = false;
@@ -135,7 +153,7 @@ public class IcebergMesh : MathMesh<SuperleggeraVertex> {
 			}
 			
 			var vertex = outerEdge.NonSharedVertex( edge );
-			var vertices = new Vertex<SuperleggeraVertex>[] {
+			var vertices = new Vertex<SimpleVertex>[] {
 				edge.V1,
 				edge.V2,
 				vertex
@@ -154,7 +172,10 @@ public class IcebergMesh : MathMesh<SuperleggeraVertex> {
 			}
 			
 			var angle = Vector3.Angle( edge.Direction, outerEdge.Direction );
-			Draw.RayFromTo( edge.V1.Position, edge.V2.Position, Palette.yellow, 1f, 2f );
+			
+			if( ShouldDraw ) {
+				Draw.RayFromTo( edge.V1.Position, edge.V2.Position, Palette.yellow, 1f, 2f );
+			}
 			
 			// Note: bad blood if the tris already exists between the two.
 			if( angle > 130f ) {
@@ -164,14 +185,16 @@ public class IcebergMesh : MathMesh<SuperleggeraVertex> {
 				if( vertex == outerEdge.V2 ) {
 					shouldFlip = true;
 				}
-				Draw.RayFromTo( edge.Midpoint, foundVertex.Position, Palette.red, 1f, 2f );
+				if( ShouldDraw ) {
+					Draw.RayFromTo( edge.Midpoint, foundVertex.Position, Palette.red, 1f, 2f );
+				}
 				return shouldFlip;
 			}
 		}
 		return shouldFlip;
 	}
 	
-	private bool _TryFindDistanceStitch( Edge edge, float searchRadius, ref Edge foundEdge, ref Vertex<SuperleggeraVertex> foundVertex ) {
+	private bool _TryFindDistanceStitch( Edge edge, float searchRadius, ref Edge foundEdge, ref Vertex<SimpleVertex> foundVertex ) {
 		var direction = edge.Direction;
 		var midpoint = edge.Midpoint;
 		var distance = float.MaxValue;
@@ -203,12 +226,14 @@ public class IcebergMesh : MathMesh<SuperleggeraVertex> {
 		return shouldFlip;
 	}
 	
-	private void _Stitch( Edge edge, Edge stitchTo, Vertex<SuperleggeraVertex> byVertex ) {
-		Extensions.TimeLogError( "[Stitching]" );
-		Draw.RayFromTo( edge.Midpoint, byVertex.Position, Palette.cyan, 0.5f, 2f );
+	private void _Stitch( Edge edge, Edge stitchTo, Vertex<SimpleVertex> byVertex ) {
+		// Extensions.TimeLogError( "[Stitching]" );
+		if( ShouldDraw ) {
+			Draw.RayFromTo( edge.Midpoint, byVertex.Position, Palette.cyan, 0.5f, 2f );
+		}
 		
 		var otherNonShared = edge.NonSharedVertex( stitchTo );
-		var vertices = new Vertex<SuperleggeraVertex>[] {
+		var vertices = new Vertex<SimpleVertex>[] {
 			edge.V1,
 			byVertex,
 			edge.V2
@@ -224,7 +249,7 @@ public class IcebergMesh : MathMesh<SuperleggeraVertex> {
 	private void _Expand( Edge edge, Vector3 position ) {
 		// Extensions.TimeLogError( "[Expanding]" );
 		var newVertex = AddVertex( position );
-		var vertices = new Vertex<SuperleggeraVertex>[] {
+		var vertices = new Vertex<SimpleVertex>[] {
 			edge.V1,
 			newVertex,
 			edge.V2

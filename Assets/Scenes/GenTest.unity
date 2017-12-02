@@ -290,6 +290,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_material: {fileID: 2100000, guid: eb8fbd9959f6d47498c24b78be091871, type: 2}
+  m_startIterations: 40
+  m_coercion: {x: 0, y: 1.2}
 --- !u!4 &1843857862
 Transform:
   m_ObjectHideFlags: 0
