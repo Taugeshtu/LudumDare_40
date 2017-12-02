@@ -3,39 +3,7 @@ using System.Collections.Generic;
 using MathMeshes;
 
 public class IcebergMesh : MathMesh<SimpleVertex> {
-	private struct Edge {
-		public Vertex<SimpleVertex> V1;
-		public Vertex<SimpleVertex> V2;
-		
-		public Vector3 Direction { get { return (V2.Position - V1.Position); } } 
-		public Vector3 Midpoint { get { return (V1.Position + V2.Position) /2; } }
-		
-		public Edge( Vertex<SimpleVertex> v1, Vertex<SimpleVertex> v2 ) {
-			V1 = v1;
-			V2 = v2;
-		}
-		
-		public bool SharesVertex( Edge other ) {
-			var sharesV1 = false;
-			var sharesV2 = false;
-			if( V1 == other.V1 || V1 == other.V2 ) { sharesV1 = true; }
-			if( V2 == other.V1 || V2 == other.V2 ) { sharesV2 = true; }
-			
-			if( sharesV1 && sharesV2 ) { return false; }
-			if( sharesV1 || sharesV2 ) { return true; }
-			return false;
-		}
-		
-		public Vertex<SimpleVertex> NonSharedVertex( Edge other ) {
-			// Note: this code assumes there's exactly 1 shared vertex
-			if( V1 == other.V1 || V1 == other.V2 ) { return V2; }
-			if( V2 == other.V1 || V2 == other.V2 ) { return V1; }
-			return null;
-		}
-	}
-	
 	private List<Edge> m_outerEdges = new List<Edge>();
-	// private List<Triangle<SuperleggeraVertex>> m_outerTris = new List<Triangle<SuperleggeraVertex>>();
 	
 	public bool ShouldDraw = false;
 	
@@ -61,11 +29,28 @@ public class IcebergMesh : MathMesh<SimpleVertex> {
 	
 	public void Coerce( float min, float max ) {
 		foreach( var vertex in m_vertices ) {
-			var height = Random.Range( min, max );
-			vertex.Properties.Position = vertex.Position.WithY( height );
+			var heightChange = Random.Range( min, max );
+			var newPosition = vertex.Position + Vector3.up *heightChange;
+			vertex.Properties.Position = newPosition;
 		}
 		
 		SplitTriangles();
+	}
+	
+	public void Split( Vector3 position, Vector3 direction ) {
+		var plane = new Plane( direction, position );
+		
+		var trisCopy = new List<Triangle<SimpleVertex>>( m_triangles );
+		var drifters = new List<Triangle<SimpleVertex>>();
+		foreach( var tris in trisCopy ) {
+			var drift = tris.TrySplit( plane );
+			if( drift != null ) {
+				drifters.AddRange( drift );
+			}
+		}
+		
+		// TODO: move drifters into their own mesh and plonk away ^^
+		WriteToMesh();
 	}
 #endregion
 	
@@ -85,7 +70,6 @@ public class IcebergMesh : MathMesh<SimpleVertex> {
 		m_outerEdges.Add( new Edge( tris.Vertices[1], tris.Vertices[2] ) );
 		m_outerEdges.Add( new Edge( tris.Vertices[2], tris.Vertices[0] ) );
 		
-		// m_outerTris.Add( tris );
 		return;
 	}
 	
@@ -103,12 +87,8 @@ public class IcebergMesh : MathMesh<SimpleVertex> {
 		var direction = (edge.V2.Position - edge.V1.Position);
 		var midpoint = edge.Midpoint;
 		
-		// Draw.Circle( edge.V1.Position, Vector3.up, searchRadius, Palette.yellow, 24, 2f );
-		// Draw.Circle( edge.V2.Position, Vector3.up, searchRadius, Palette.orange, 24, 2f );
-		// Draw.RayFromTo( edge.V1.Position, edge.V2.Position, Palette.green, 2f, 2f );
-		
 		Vertex<SimpleVertex> foundVertex = null;
-		Edge foundEdge = new Edge();
+		Edge foundEdge = null;
 		
 		var shouldFlip = _TryFindAngleStitch( edge, ref foundEdge, ref foundVertex );
 		if( foundVertex == null ) {
@@ -117,7 +97,6 @@ public class IcebergMesh : MathMesh<SimpleVertex> {
 		
 		if( foundVertex != null ) {
 			if( shouldFlip ) {
-				// Extensions.TimeLogError( "Flipping burgers" );
 				foundVertex = edge.NonSharedVertex( foundEdge );
 				var savedEdge = edge;
 				edge = foundEdge;
@@ -224,7 +203,6 @@ public class IcebergMesh : MathMesh<SimpleVertex> {
 	}
 	
 	private void _Stitch( Edge edge, Edge stitchTo, Vertex<SimpleVertex> byVertex ) {
-		// Extensions.TimeLogError( "[Stitching]" );
 		if( ShouldDraw ) {
 			Draw.RayFromTo( edge.Midpoint, byVertex.Position, Palette.cyan, 0.5f, 2f );
 		}
@@ -236,7 +214,9 @@ public class IcebergMesh : MathMesh<SimpleVertex> {
 			edge.V2
 		};
 		
-		var tris = AddTriangle( vertices );
+		var tris = _EmitTriangle( vertices );
+		AbortMeshWriting();
+		m_triangles.Add( tris );
 		
 		m_outerEdges.Add( new Edge( byVertex, otherNonShared ) );
 		m_outerEdges.Remove( edge );
@@ -244,21 +224,21 @@ public class IcebergMesh : MathMesh<SimpleVertex> {
 	}
 	
 	private void _Expand( Edge edge, Vector3 position ) {
-		// Extensions.TimeLogError( "[Expanding]" );
-		var newVertex = AddVertex( position );
+		var newVertex = _EmitVertex( position );
 		var vertices = new Vertex<SimpleVertex>[] {
 			edge.V1,
 			newVertex,
 			edge.V2
 		};
 		
-		var tris = AddTriangle( vertices );
+		var tris = _EmitTriangle( vertices );
+		m_vertices.Add( newVertex );
+		AbortMeshWriting();
+		m_triangles.Add( tris );
 		
 		m_outerEdges.Add( new Edge( edge.V1, newVertex ) );
 		m_outerEdges.Add( new Edge( newVertex, edge.V2 ) );
 		m_outerEdges.Remove( edge );
-		
-		// m_outerTris.Add( tris );
 	}
 #endregion
 	

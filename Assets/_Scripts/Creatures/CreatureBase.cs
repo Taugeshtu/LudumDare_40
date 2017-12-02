@@ -21,6 +21,8 @@ public abstract class CreatureBase : MonoBehaviour {
 		}
 	}
 	
+	protected Iceberg _iceberg { get; private set; }
+	
 #region Implementation
 	void FixedUpdate() {
 		_Move();
@@ -41,6 +43,9 @@ public abstract class CreatureBase : MonoBehaviour {
 	
 	
 #region Public
+	public void Link( Iceberg ice ) {
+		_iceberg = ice;
+	}
 #endregion
 	
 	
@@ -76,7 +81,9 @@ public abstract class CreatureBase : MonoBehaviour {
 	}
 	
 	protected void _ReachNewVelocity( Vector3 newVelocity ) {
-		Vector3.SmoothDamp( _rigidbody.velocity, newVelocity, ref m_velocity, m_acceleration *Time.fixedDeltaTime, m_speed );
+		var current = _rigidbody.velocity.XZ().X0Y();
+		newVelocity *= m_speed;
+		Vector3.SmoothDamp( current, newVelocity, ref m_velocity, m_acceleration *Time.fixedDeltaTime, m_speed );
 		
 		Draw.RayCross( transform.position, m_velocity, Palette.red, 0.5f );
 		

@@ -2,40 +2,45 @@
 using System.Collections.Generic;
 using MathMeshes;
 
-public class IcebergGenerator : MonoBehaviour {
+public class IceGenerator : MonoSingular<IceGenerator> {
 	[SerializeField] private Material m_material;
 	[SerializeField] private float m_genRadius = 3f;
 	[SerializeField] private float m_stitchRadius = 5f;
-	[SerializeField] private int m_startIterations = 40;
 	[SerializeField] private Vector2 m_coercion = Vector2.up *0.5f;
 	
-	private Iceberg m_generated;
+	public static Material Material {
+		get { return s_Instance.m_material; }
+		set { s_Instance.m_material = value; }
+	}
+	public static float GenRadius {
+		get { return s_Instance.m_genRadius; }
+		set { s_Instance.m_genRadius = value; }
+	}
+	public static float StitchRadius {
+		get { return s_Instance.m_stitchRadius; }
+		set { s_Instance.m_stitchRadius = value; }
+	}
+	public static Vector2 Coercion {
+		get { return s_Instance.m_coercion; }
+		set { s_Instance.m_coercion = value; }
+	}
 	
 #region Implementation
-	void Update() {
-		if( m_generated == null ) {
-			m_generated = Generate( m_startIterations );
-		}
-		
-		if( Input.GetKeyDown( KeyCode.G ) ) {
-			_GenIteration( m_generated.Mesh );
-		}
-	}
 #endregion
 	
 	
 #region Public
-	public Iceberg Generate( int iterations ) {
+	public static Iceberg Generate( int iterations ) {
 		var prep = _PrepareMesh();
 		
 		var iceberg = prep.Filter.gameObject.AddComponent<Iceberg>();
 		iceberg.Init( prep );
 		
 		for( var i = 0; i < iterations; i++ ) {
-			iceberg.Mesh.SpawnTriangle( m_genRadius, m_stitchRadius );
+			iceberg.Mesh.SpawnTriangle( GenRadius, StitchRadius );
 		}
 		
-		iceberg.Mesh.Coerce( m_coercion.x, m_coercion.y );
+		iceberg.Mesh.Coerce( Coercion.x, Coercion.y );
 		iceberg.Mesh.WriteToMesh();
 		
 		return iceberg;
@@ -44,7 +49,7 @@ public class IcebergGenerator : MonoBehaviour {
 	
 	
 #region Private
-	private IcebergMesh _PrepareMesh() {
+	private static IcebergMesh _PrepareMesh() {
 		var holder = new GameObject( "Iceberg" );
 		var filter = holder.AddComponent<MeshFilter>();
 		var collider = holder.AddComponent<MeshCollider>();
@@ -53,7 +58,7 @@ public class IcebergGenerator : MonoBehaviour {
 		var mesh = new Mesh();
 		filter.mesh = mesh;
 		collider.sharedMesh = mesh;
-		render.material = m_material;
+		render.material = Material;
 		
 		var mathMesh = new IcebergMesh( filter, collider, false );
 		return mathMesh;
