@@ -25,6 +25,10 @@ public class SliceIndicator : MonoBehaviour {
 	
 	
 #region Public
+	public void Position( Vector3 point, Vector3 direction ) {
+		transform.position = point;
+		transform.rotation = Quaternion.LookRotation( direction );
+	}
 #endregion
 	
 	

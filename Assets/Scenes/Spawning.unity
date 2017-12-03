@@ -151,7 +151,7 @@ MeshRenderer:
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
   m_Materials:
-  - {fileID: 2100000, guid: 706d6430437fc20488ed729da2f8571b, type: 2}
+  - {fileID: 2100000, guid: 084f729dbf5392244b5d10d4f3a81719, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -3797,7 +3797,8 @@ MonoBehaviour:
   m_shouldDraw: 1
   m_historyDepth: 35
   m_splitReach: 1.8
-  m_splitUI: {fileID: 1487227222}
+  m_attackUI: {fileID: 0}
+  m_splitUI: {fileID: 1487227223}
 --- !u!54 &1104547650
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -4503,7 +4504,6 @@ MonoBehaviour:
   m_castDepth: 0.7
   m_shouldDraw: 0
   m_historyDepth: 35
-  IsAlive: 1
 --- !u!4 &1614519016
 Transform:
   m_ObjectHideFlags: 0
@@ -4541,6 +4541,7 @@ GameObject:
   serializedVersion: 5
   m_Component:
   - component: {fileID: 1770957540}
+  - component: {fileID: 1770957541}
   m_Layer: 0
   m_Name: Rotor
   m_TagString: Untagged
@@ -4554,7 +4555,7 @@ Transform:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1770957539}
-  m_LocalRotation: {x: 0.41900557, y: 0.11829673, z: -0.055163108, w: 0.8985529}
+  m_LocalRotation: {x: 0.40822077, y: 0.23456936, z: -0.109382406, w: 0.8754248}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
@@ -4562,6 +4563,26 @@ Transform:
   m_Father: {fileID: 1799524009}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1770957541
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1770957539}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5b4087d39bae3d54bb502817a30df473, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_majorJumps:
+    x: 4
+    y: 5
+  m_minorJumps:
+    x: 3
+    y: 7
+  m_majorAmp: 1.5
+  m_minorAmp: 0.6
+  m_jumpTime: 0.01
 --- !u!1 &1799524008
 GameObject:
   m_ObjectHideFlags: 0

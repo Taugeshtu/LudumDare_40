@@ -32,6 +32,8 @@ public abstract class CreatureBase : IcebergEntity {
 		get { return (1 << 8); }
 	}
 	
+	public bool IsAlive { get; private set; }
+	
 #region Implementation
 	void Awake() {
 		_Ignite();
@@ -118,6 +120,7 @@ public abstract class CreatureBase : IcebergEntity {
 		foreach( var child in allChildren ) {
 			child.gameObject.layer = 9;
 		}
+		IsAlive = true;
 	}
 	
 	protected virtual void _Move() {

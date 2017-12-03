@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 
 public class Monster : AICreature {
-	public bool IsAlive = true;
-	
 	private Penguin m_target;
 	
 	protected override int _layerMask {

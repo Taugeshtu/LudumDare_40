@@ -48,8 +48,6 @@ public class IcebergMesh : BigMesh<SimpleVertex> {
 		
 		WeldVertices();
 		
-		Extensions.TimeLogError( "Verts: "+m_vertices.Count );
-		
 		var trisCopy = new List<Triangle<SimpleVertex>>( m_triangles );
 		var drifters = new List<Triangle<SimpleVertex>>();
 		
