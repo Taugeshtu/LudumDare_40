@@ -2,6 +2,14 @@
 using System.Collections.Generic;
 
 public class Player : CreatureBase {
+	private enum State {
+		Walking,
+		Attacking,
+		ChargingSplit,
+		LandingSplit
+		
+	}
+	
 	[Header( "Ice-split" )]
 	[SerializeField] private float m_splitReach = 1.5f;
 	[SerializeField] private Transform m_splitUI;

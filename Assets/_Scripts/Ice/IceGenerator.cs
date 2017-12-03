@@ -35,10 +35,9 @@ public class IceGenerator : MonoSingular<IceGenerator> {
 	
 	
 #region Public
-	public static Iceberg Generate( List<Triangle<SimpleVertex>> triangles ) {
-		var mesh = _PrepareMesh();
-		var iceberg = mesh.Filter.gameObject.AddComponent<Iceberg>();
-		iceberg.Ignite( mesh );
+	public static Iceberg Generate( Vector3 pivotPosition, List<Triangle<SimpleVertex>> triangles ) {
+		var iceberg = _PrepareIceberg( pivotPosition );
+		
 		iceberg.Mesh.RegisterTriangles( triangles );
 		foreach( var tris in triangles ) {
 			tris.MakeSkirt( Skirt );
@@ -49,15 +48,14 @@ public class IceGenerator : MonoSingular<IceGenerator> {
 	}
 	
 	public static Iceberg Generate( int iterations ) {
-		var mesh = _PrepareMesh();
-		var iceberg = mesh.Filter.gameObject.AddComponent<Iceberg>();
-		iceberg.Ignite( mesh );
+		var iceberg = _PrepareIceberg( Vector3.zero );
 		
 		for( var i = 0; i < iterations; i++ ) {
 			iceberg.Mesh.SpawnTriangle( GenRadius, StitchRadius );
 		}
 		
 		iceberg.Mesh.Coerce( Coercion.x, Coercion.y );
+		iceberg.Mesh.MakeVerticesUnique();
 		iceberg.Mesh.WriteToMesh();
 		
 		return iceberg;
@@ -66,13 +64,18 @@ public class IceGenerator : MonoSingular<IceGenerator> {
 	
 	
 #region Private
-	private static IcebergMesh _PrepareMesh() {
-		var holder = new GameObject( "Iceberg" );
-		holder.layer = 8;
+	private static Iceberg _PrepareIceberg( Vector3 pivot ) {
+		var pivotObject = new GameObject( "Iceberg" );
+		pivotObject.layer = 8;
+		pivotObject.transform.position = pivot;
 		
-		var filter = holder.AddComponent<MeshFilter>();
-		var collider = holder.AddComponent<MeshCollider>();
-		var render = holder.AddComponent<MeshRenderer>();
+		var meshObject = new GameObject( "Visuals" );
+		meshObject.layer = 8;
+		meshObject.transform.SetParent( pivotObject.transform, true );
+		
+		var filter = meshObject.AddComponent<MeshFilter>();
+		var collider = meshObject.AddComponent<MeshCollider>();
+		var render = meshObject.AddComponent<MeshRenderer>();
 		
 		var mesh = new Mesh();
 		filter.mesh = mesh;
@@ -80,7 +83,10 @@ public class IceGenerator : MonoSingular<IceGenerator> {
 		render.material = Material;
 		
 		var mathMesh = new IcebergMesh( filter, collider, false );
-		return mathMesh;
+		
+		var iceberg = pivotObject.AddComponent<Iceberg>();
+		iceberg.Ignite( mathMesh );
+		return iceberg;
 	}
 	
 	private void _GenIteration( IcebergMesh mesh ) {

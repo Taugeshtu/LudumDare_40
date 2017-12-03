@@ -12,6 +12,7 @@ public class Iceberg : MonoBehaviour {
 	
 	private Vector3 m_velocity;
 	private float m_maxSpeed = 2f;
+	private float m_turnSpeed = 0f;
 	
 	private List<IcebergEntity> m_entities = new List<IcebergEntity>();
 	
@@ -83,11 +84,11 @@ public class Iceberg : MonoBehaviour {
 	
 	public void Split( Vector3 position, Vector3 direction ) {
 		var drifters = Mesh.Split( position, direction );
-		var newIceberg = IceGenerator.Generate( drifters );
+		var pivotPosition = position + direction.normalized *IceGenerator.GenRadius *0.2f;
+		var newIceberg = IceGenerator.Generate( pivotPosition, drifters );
 		
 		var drift = direction.normalized *m_maxSpeed;
-		newIceberg.m_drift = drift;
-		newIceberg.m_driftStartTime = Time.time + m_driftDelay;
+		newIceberg.SetAdrift( drift, Random.Range( -5f, 5f ) );
 		
 		var shift = Vector3.Project( position, direction );
 		var plane = new Plane( shift, -shift.magnitude );
@@ -107,6 +108,12 @@ public class Iceberg : MonoBehaviour {
 			m_penguins.Remove( sadPengu );
 			sadPengu.transform.SetParent( newIceberg.transform, true );
 		}
+	}
+	
+	public void SetAdrift( Vector3 drift, float turnSpeed ) {
+		m_drift = drift;
+		m_driftStartTime = Time.time + m_driftDelay;
+		m_turnSpeed = turnSpeed;
 	}
 #endregion
 	
@@ -162,6 +169,7 @@ public class Iceberg : MonoBehaviour {
 		m_velocity = m_drift.normalized *speed;
 		
 		transform.position += m_velocity *Time.fixedDeltaTime;
+		transform.rotation *= Quaternion.AngleAxis( m_turnSpeed *Time.fixedDeltaTime, Vector3.up );
 	}
 #endregion
 	

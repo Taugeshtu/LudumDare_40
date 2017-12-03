@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using MathMeshes;
 
-public class IcebergMesh : MathMesh<SimpleVertex> {
+public class IcebergMesh : BigMesh<SimpleVertex> {
 	private List<Edge> m_outerEdges = new List<Edge>();
 	
 	public bool ShouldDraw = false;
@@ -38,40 +38,27 @@ public class IcebergMesh : MathMesh<SimpleVertex> {
 		foreach( var tris in trisCopy ) {
 			tris.MakeSkirt( Vector3.up *10 );
 		}
-		
-		SplitTriangles();
-	}
-	
-	public List<Triangle<SimpleVertex>> Split( Vector3 position, Vector3 direction ) {
-		var shift = Vector3.Project( position, direction );
-		var plane = new Plane( shift, -shift.magnitude );
-		var inverted = false;
-		if( Vector3.Angle( shift, direction ) > 90 ) {	// Meaning we're beyond zer0
-			inverted = true;
-		}
-		
-		var trisCopy = new List<Triangle<SimpleVertex>>( m_triangles );
-		var drifters = new List<Triangle<SimpleVertex>>();
-		var replacements = new List<Triangle<SimpleVertex>>();
-		foreach( var tris in trisCopy ) {
-			var drift = tris.TrySplit( ref plane, inverted, replacements );
-			if( drift != null ) {
-				drifters.AddRange( drift );
-			}
-		}
-		
-		foreach( var tris in replacements ) {
-			tris.MakeSkirt( IceGenerator.Skirt );
-		}
-		
-		WriteToMesh();
-		return drifters;
 	}
 	
 	public void RegisterTriangles( List<Triangle<SimpleVertex>> triangles ) {
 		foreach( var tris in triangles ) {
 			AddTriangle( tris );
 		}
+	}
+	
+	public List<Triangle<SimpleVertex>> Split( Vector3 position, Vector3 direction ) {
+		var replacements = new List<Triangle<SimpleVertex>>();
+		var drifters = Split( position, direction, replacements );
+		
+		Extensions.TimeLogError( "Tris: "+m_triangles.Count+", Verts: "+m_vertices.Count+", should be: "+(m_triangles.Count *3) );
+		
+		var optimized = Optimize( replacements );
+		
+		foreach( var tris in optimized ) {
+			tris.MakeSkirt( IceGenerator.Skirt );
+		}
+		
+		return drifters;
 	}
 #endregion
 	
