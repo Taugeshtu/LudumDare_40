@@ -18,6 +18,7 @@ public class Player : CreatureBase {
 	private State m_state;
 	private float m_stateTimer;
 	private bool m_canSplit = true;
+	private Monster m_target;
 	
 	protected override int _layerMask {
 		get { return (1 << 8) + (1 << 9); }	// Note: because Player can actually walk on monsters
@@ -32,7 +33,22 @@ public class Player : CreatureBase {
 		var direction = Vector3.zero;
 		_GetCut( out point, out direction );
 		
-		m_splitUI.Position( point, direction );
+		m_attackUI.gameObject.SetActive( false );
+		m_splitUI.gameObject.SetActive( false );
+		if( m_state == State.Walking ) {
+			m_target = _SeekTarget();
+			if( m_target != null ) {
+				point = m_target.transform.position;
+				direction = m_target.transform.forward;
+				
+				m_attackUI.gameObject.SetActive( true );
+				m_attackUI.Position( point, direction );
+			}
+			else {
+				m_splitUI.gameObject.SetActive( true );
+				m_splitUI.Position( point, direction );
+			}
+		}
 	}
 #endregion
 	
@@ -125,12 +141,27 @@ public class Player : CreatureBase {
 		}
 	}
 	
-	private void _SeekTarget() {
+	private Monster _SeekTarget() {
+		var point = Vector3.zero;
+		var direction = Vector3.zero;
+		_GetCut( out point, out direction );
+		
+		Monster found = null;
+		var minDistance = float.MaxValue;
 		foreach( var monster in m_iceberg.Monsters ) {
 			if( monster.IsAlive ) {
-				
+				var diffToMonster = (monster.transform.position - point);
+				if( diffToMonster.magnitude < minDistance ) {
+					found = monster;
+					minDistance = diffToMonster.magnitude;
+				}
 			}
 		}
+		
+		if( minDistance > 2f ) {
+			found = null;
+		}
+		return found;
 	}
 	
 	protected override void _Ignite() {
