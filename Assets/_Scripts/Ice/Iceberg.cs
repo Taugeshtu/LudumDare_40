@@ -84,20 +84,14 @@ public class Iceberg : MonoBehaviour {
 	
 	public void Split( Vector3 position, Vector3 direction ) {
 		var drifters = Mesh.Split( position, direction );
+		// TODO: weld, unweld, unskirt, re-skirt!
+		
 		Mesh.WriteToMesh();
+		
 		var pivotPosition = position + direction.normalized *IceGenerator.GenRadius *0.2f;
-		var newIceberg = IceGenerator.Generate( pivotPosition, drifters );
-		
-		
-		
-		// =====================================================
-		newIceberg.gameObject.SetActive( false );
-		
-		
-		
-		
-		
 		var drift = direction.normalized *m_maxSpeed;
+		
+		var newIceberg = IceGenerator.Generate( pivotPosition, drifters );
 		newIceberg.SetAdrift( drift, Random.Range( -5f, 5f ) );
 		
 		var shift = Vector3.Project( position, direction );
