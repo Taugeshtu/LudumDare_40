@@ -87,7 +87,15 @@ public class Iceberg : MonoBehaviour {
 		Mesh.WriteToMesh();
 		var pivotPosition = position + direction.normalized *IceGenerator.GenRadius *0.2f;
 		var newIceberg = IceGenerator.Generate( pivotPosition, drifters );
+		
+		
+		
+		// =====================================================
 		newIceberg.gameObject.SetActive( false );
+		
+		
+		
+		
 		
 		var drift = direction.normalized *m_maxSpeed;
 		newIceberg.SetAdrift( drift, Random.Range( -5f, 5f ) );

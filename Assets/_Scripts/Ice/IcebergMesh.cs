@@ -47,6 +47,7 @@ public class IcebergMesh : BigMesh<SimpleVertex> {
 	}
 	
 	public List<Triangle<SimpleVertex>> Split( Vector3 position, Vector3 direction ) {
+		/*
 		var replacements = new List<Triangle<SimpleVertex>>();
 		var drifters = Split( position, direction, replacements );
 		
@@ -54,7 +55,132 @@ public class IcebergMesh : BigMesh<SimpleVertex> {
 			tris.MakeSkirt( IceGenerator.Skirt );
 		}
 		
+		var drift = tris.TrySplit( ref plane, inverted, replacements );
+			if( drift != null ) {
+				drifters.AddRange( drift );
+			}
+			
+		*/
+		
+		var replacements = new List<Triangle<SimpleVertex>>();
+		var inverted = false;
+		var plane = _GetSplitPlane( position, direction, out inverted );
+		
+		WeldVertices();
+		
+		var trisCopy = new List<Triangle<SimpleVertex>>( m_triangles );
+		var drifters = new List<Triangle<SimpleVertex>>();
+		
+		var tangent = Vector3.right;
+		Vector3.OrthoNormalize( ref direction, ref tangent );
+		
+		Triangle<SimpleVertex> startTris = null;
+		var minDistance = float.MaxValue;
+		var ideal = Vector3.Project( position, tangent );
+		foreach( var tris in trisCopy ) {
+			if( tris._GetSide( ref plane, inverted ) == 0 ) {
+				var projection = Vector3.Project( tris.Center, tangent );
+				var distance = (projection - ideal).magnitude;
+				if( distance < minDistance ) {
+					minDistance = distance;
+					startTris = tris;
+				}
+			}
+		}
+		
+		if( startTris == null ) {
+			return drifters;
+		}
+		
+		var bendLeft = Dice.Roll( 0.25f ) ? 30f : 30f;
+		var bendRight = Dice.Roll( 0.25f ) ? -30f : -30f;
+		var directionLeft = direction;
+		var directionRight = direction;
+		
+		var section = new Vector3[2];
+		drifters.AddRange( startTris.TrySplit( ref plane, inverted, replacements, out section ) );
+		
+		trisCopy.Remove( startTris );
+		trisCopy = _FilterCrack( position, direction, startTris, trisCopy );
+		
+		startTris.DrawMe( Palette.blue );
+		
+		_CrackSide( startTris, section[0], directionLeft, trisCopy, drifters, replacements );
+		_CrackSide( startTris, section[1], directionRight, trisCopy, drifters, replacements );
+		
+		foreach( var leftover in trisCopy ) {
+			DestroyTriangle( leftover );
+			Draw.Cross( leftover.Center, Palette.green, 1, 2 );
+		}
+		drifters.AddRange( trisCopy );
+		
+		// replacements = new List<Triangle<SimpleVertex>>( Optimize( replacements ) );
+		foreach( var newTriangle in replacements ) {
+			AddTriangle( newTriangle );
+		}
+		
 		return drifters;
+	}
+	
+	private List<Triangle<SimpleVertex>> _FilterCrack( Vector3 point, Vector3 originalDirection, Triangle<SimpleVertex> parent, List<Triangle<SimpleVertex>> triangles ) {
+		var inverted = false;
+		var plane = _GetSplitPlane( point, originalDirection, out inverted );
+		
+		for( var i = triangles.Count - 1; i >= 0; i-- ) {
+			var tris = triangles[i];
+			var siding = tris._GetSide( ref plane, inverted );
+			if( siding == -1 ) {
+				Draw.Cross( tris.Center, Palette.red, 3, 2 );
+				triangles.RemoveAt( i );
+			}
+		}
+		
+		var joinedTriangles = new List<Triangle<SimpleVertex>>();
+		joinedTriangles.Add( parent );
+		
+		for( var a = triangles.Count - 1; a >= 0; a-- ) {
+			var tris = triangles[a];
+			triangles.RemoveAt( a );
+			
+			for( var b = 0; b < joinedTriangles.Count; b++ ) {
+				var joined = joinedTriangles[b];
+				if( tris.SharesSide( joined ) ) {
+					joinedTriangles.Add( tris );
+					break;
+				}
+			}
+		}
+		
+		return joinedTriangles;
+	}
+	
+	private void _CrackSide( Triangle<SimpleVertex> parent, Vector3 point, Vector3 originalDirection,
+		List<Triangle<SimpleVertex>> triangles,
+		List<Triangle<SimpleVertex>> drifters,
+		List<Triangle<SimpleVertex>> replacements ) {
+		var inverted = false;
+		var plane = _GetSplitPlane( point, originalDirection, out inverted );
+		
+		for( var i = triangles.Count - 1; i >= 0; i-- ) {
+			var tris = triangles[i];
+			var siding = tris._GetSide( ref plane, inverted );
+			
+			if( siding == 0 ) {
+				if( tris.SharesSide( parent ) ) {
+					triangles.RemoveAt( i );
+					
+					Draw.RayFromToCross( parent.Center, tris.Center, Palette.orange, 1, 2 );
+					
+					var section = new Vector3[2];
+					drifters.AddRange( tris.TrySplit( ref plane, inverted, replacements, out section ) );
+					
+					tris.DrawMe( Palette.darkCyan );
+					var newPoint = section[0].EpsilonEquals( point ) ? section[1] : section[0];
+					_CrackSide( tris, newPoint, originalDirection, triangles, drifters, replacements );
+					break;
+				}
+			}
+		}
 	}
 #endregion
 	
@@ -243,6 +369,16 @@ public class IcebergMesh : BigMesh<SimpleVertex> {
 		m_outerEdges.Add( new Edge<SimpleVertex>( edge.V1, newVertex ) );
 		m_outerEdges.Add( new Edge<SimpleVertex>( newVertex, edge.V2 ) );
 		m_outerEdges.Remove( edge );
+	}
+	
+	private Plane _GetSplitPlane( Vector3 position, Vector3 direction, out bool isInverted ) {
+		isInverted = false;
+		var shift = Vector3.Project( position, direction );
+		var plane = new Plane( shift, -shift.magnitude );
+		if( Vector3.Angle( shift, direction ) > 90 ) {	// Meaning we're beyond zer0
+			isInverted = true;
+		}
+		return plane;
 	}
 #endregion
 	
