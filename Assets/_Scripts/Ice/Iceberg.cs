@@ -13,6 +13,8 @@ public class Iceberg : MonoBehaviour {
 	private Vector3 m_velocity;
 	private float m_maxSpeed = 2f;
 	
+	private List<IcebergEntity> m_entities = new List<IcebergEntity>();
+	
 	private List<Penguin> m_penguins = new List<Penguin>();
 	private List<Monster> m_monsters = new List<Monster>();
 	private Player m_player;
@@ -33,10 +35,26 @@ public class Iceberg : MonoBehaviour {
 		Mesh = mesh;
 	}
 	
-	public void LinkPlayer( Player player ) {
-		m_player = player;
-		m_player.Link( this );
-		m_player.transform.SetParent( transform, true );
+	public void AddEntity( IcebergEntity entity ) {
+		if( entity == null ) {
+			Extensions.TimeLogWarning( "This shouldn't happen. Trying to add null entity to Iceberg!", gameObject );
+			return;
+		}
+		
+		m_entities.Add( entity );
+		
+		entity.Link( this );
+		entity.transform.SetParent( transform, true );
+		
+		if( entity is Player ) {
+			m_player = entity as Player;
+		}
+		else if( entity is Penguin ) {
+			m_penguins.Add( entity as Penguin );
+		}
+		else if( entity is Monster ) {
+			m_monsters.Add( entity as Monster );
+		}
 	}
 	
 	public void SpawnPenguins( int count ) {
@@ -48,9 +66,7 @@ public class Iceberg : MonoBehaviour {
 			var point = Random.insideUnitCircle.X0Y() *20;
 			var newPengu = _SpawnPenguin( point );
 			
-			if( newPengu != null ) {
-				m_penguins.Add( newPengu );
-			}
+			AddEntity( newPengu );
 			
 			sanityCheck -= 1;
 			if( sanityCheck <= 0 ) {
@@ -60,7 +76,9 @@ public class Iceberg : MonoBehaviour {
 	}
 	
 	public void SpawnMonster() {
-		
+		var position = _GetPositionForMonster();
+		var monster = _SpawnMonster( position );
+		AddEntity( monster );
 	}
 	
 	public void Split( Vector3 position, Vector3 direction ) {
@@ -106,7 +124,7 @@ public class Iceberg : MonoBehaviour {
 			
 			var pengu = Instantiate( Game.PenguinPrefab );
 			pengu.gameObject.SetActive( true );
-			pengu.transform.SetParent( transform );
+			// pengu.transform.SetParent( transform );
 			pengu.transform.rotation = Quaternion.AngleAxis( Random.value *360f, Vector3.up );
 			pengu.transform.position = hit.point + Vector3.up *Random.Range( 1f, 3f );
 			return pengu;
@@ -118,13 +136,22 @@ public class Iceberg : MonoBehaviour {
 	
 	private Vector3 _GetPositionForMonster() {
 		var bounds = Mesh.ActualMesh.bounds;
-		var point = Random.insideUnitCircle.normalized;
-		point *= bounds.size.magnitude + 5;
+		var point = Random.insideUnitCircle.normalized.X0Y();
+		point *= bounds.size.magnitude /2 + 0;
+		point += Vector3.up *Random.Range( 1f, 3f );
 		return point;
 	}
 	
 	private Monster _SpawnMonster( Vector3 position ) {
-		return null;
+		var monster = Instantiate( Game.MonsterPrefab );
+		monster.gameObject.SetActive( true );
+		
+		var rotation = Quaternion.LookRotation( -position.XZ().X0Y() );
+		rotation *= Quaternion.AngleAxis( Random.Range( -20, 20 ), Vector3.up );
+		monster.transform.rotation = rotation;
+		monster.transform.position = position;
+		
+		return monster;
 	}
 	
 	private void _ProcessDrift() {

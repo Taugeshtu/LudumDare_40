@@ -4,7 +4,11 @@ using System.Collections.Generic;
 
 public class Game : MonoSingular<Game> {
 	private enum GameState {
-		InGame
+		NotReady,
+		Menu,
+		Tutorial,
+		InGame,
+		StatsScreen
 	}
 	
 	[SerializeField] private int m_iceIterations = 40;
@@ -25,10 +29,11 @@ public class Game : MonoSingular<Game> {
 	[SerializeField] private float m_minorAmplitude = 1f;
 	
 	[Header( "Balancing" )]
+	[SerializeField] private float m_valueDropSeconds = 5f;
 	[SerializeField] private float m_monsterValue = 1f;
 	[SerializeField] private float m_singleMonsterChance = 0.25f;
 	
-	private GameState m_state;
+	private GameState m_state = GameState.NotReady;
 	private float m_gameStartTime;
 	private Iceberg m_playerIceberg;
 	
@@ -42,6 +47,8 @@ public class Game : MonoSingular<Game> {
 #region Implementation
 	void Awake() {
 		m_penguinPrefab.gameObject.SetActive( false );
+		m_monsterPrefab.gameObject.SetActive( false );
+		
 		StartGame();
 		_DebugPace();
 	}
@@ -56,23 +63,27 @@ public class Game : MonoSingular<Game> {
 	
 #region Public
 	public void StartGame() {
-		m_gameStartTime = Time.time;
+		if( m_playerIceberg != null ) {
+			m_playerIceberg.Mesh.AbortMeshWriting();
+			Destroy( m_playerIceberg );
+		}
 		
 		m_playerIceberg = IceGenerator.Generate( m_iceIterations );
-		
 		if( m_player != null ) {
-			m_playerIceberg.LinkPlayer( m_player );
+			m_playerIceberg.AddEntity( m_player );
 		}
 		
 		StopAllCoroutines();
-		StartCoroutine( _SpawnPenguinsRoutine() );
+		StartCoroutine( _DelayedStart() );
 	}
 #endregion
 	
 	
 #region Private
-	private IEnumerator _SpawnPenguinsRoutine() {
+	private IEnumerator _DelayedStart() {
 		yield return new WaitForSeconds( 0.3f );
+		m_gameStartTime = Time.time;
+		m_state = GameState.InGame;
 		
 		var penguinsCount = Random.Range( m_populationSize.x, m_populationSize.y );
 		Extensions.TimeLog( "Settled on "+penguinsCount+" penguins" );
@@ -123,6 +134,7 @@ public class Game : MonoSingular<Game> {
 			return;
 		}
 		
+		m_currentValue -= Time.deltaTime /m_valueDropSeconds;
 		if( m_currentValue > 0 ) {
 			return;
 		}
@@ -133,8 +145,11 @@ public class Game : MonoSingular<Game> {
 			monstersToSpawn = 1;
 		}
 		
+		Extensions.TimeLogError( "Going to spawn "+monstersToSpawn+" monsters!" );
+		
 		for( var i = 0; i < monstersToSpawn; i++ ) {
 			m_playerIceberg.SpawnMonster();
+			m_currentValue += m_monsterValue;
 		}
 	}
 #endregion

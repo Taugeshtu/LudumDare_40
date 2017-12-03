@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 
-public abstract class CreatureBase : MonoBehaviour {
+public abstract class CreatureBase : IcebergEntity {
 	[Header( "Movement" )]
 	[SerializeField] protected float m_speed = 4f;
 	[SerializeField] protected float m_acceleration = 0.5f;
@@ -28,7 +28,6 @@ public abstract class CreatureBase : MonoBehaviour {
 		}
 	}
 	
-	protected Iceberg _iceberg { get; private set; }
 	protected virtual int _layerMask {
 		get { return (1 << 8); }
 	}
@@ -57,9 +56,6 @@ public abstract class CreatureBase : MonoBehaviour {
 	
 	
 #region Public
-	public void Link( Iceberg ice ) {
-		_iceberg = ice;
-	}
 #endregion
 	
 	

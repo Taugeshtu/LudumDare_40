@@ -27,8 +27,8 @@ public class Player : CreatureBase {
 		m_splitUI.rotation = Quaternion.LookRotation( direction );
 		
 		if( Input.GetMouseButtonDown( 1 ) ) {
-			if( _iceberg != null ) {
-				_iceberg.Split( point, direction );
+			if( m_iceberg != null ) {
+				m_iceberg.Split( point, direction );
 			}
 		}
 	}
