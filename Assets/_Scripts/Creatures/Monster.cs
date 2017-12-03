@@ -3,6 +3,8 @@ using System.Collections.Generic;
 
 public class Monster : CreatureBase {
 	
+	public bool IsAlive = true;
+	
 #region Implementation
 #endregion
 	

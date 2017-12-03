@@ -7,6 +7,7 @@ public class IceGenerator : MonoSingular<IceGenerator> {
 	[SerializeField] private float m_genRadius = 3f;
 	[SerializeField] private float m_stitchRadius = 5f;
 	[SerializeField] private Vector2 m_coercion = Vector2.up *0.5f;
+	[SerializeField] private Vector3 m_skirt = Vector3.up *10;
 	
 	public static Material Material {
 		get { return s_Instance.m_material; }
@@ -24,6 +25,10 @@ public class IceGenerator : MonoSingular<IceGenerator> {
 		get { return s_Instance.m_coercion; }
 		set { s_Instance.m_coercion = value; }
 	}
+	public static Vector3 Skirt {
+		get { return s_Instance.m_skirt; }
+		set { s_Instance.m_skirt = value; }
+	}
 	
 #region Implementation
 #endregion
@@ -35,6 +40,10 @@ public class IceGenerator : MonoSingular<IceGenerator> {
 		var iceberg = mesh.Filter.gameObject.AddComponent<Iceberg>();
 		iceberg.Ignite( mesh );
 		iceberg.Mesh.RegisterTriangles( triangles );
+		foreach( var tris in triangles ) {
+			tris.MakeSkirt( Skirt );
+		}
+		
 		iceberg.Mesh.WriteToMesh();
 		return iceberg;
 	}

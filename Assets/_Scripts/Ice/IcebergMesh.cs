@@ -34,6 +34,11 @@ public class IcebergMesh : MathMesh<SimpleVertex> {
 			vertex.Properties.Position = newPosition;
 		}
 		
+		var trisCopy = new List<Triangle<SimpleVertex>>( m_triangles );
+		foreach( var tris in trisCopy ) {
+			tris.MakeSkirt( Vector3.up *10 );
+		}
+		
 		SplitTriangles();
 	}
 	
@@ -47,11 +52,16 @@ public class IcebergMesh : MathMesh<SimpleVertex> {
 		
 		var trisCopy = new List<Triangle<SimpleVertex>>( m_triangles );
 		var drifters = new List<Triangle<SimpleVertex>>();
+		var replacements = new List<Triangle<SimpleVertex>>();
 		foreach( var tris in trisCopy ) {
-			var drift = tris.TrySplit( ref plane, inverted );
+			var drift = tris.TrySplit( ref plane, inverted, replacements );
 			if( drift != null ) {
 				drifters.AddRange( drift );
 			}
+		}
+		
+		foreach( var tris in replacements ) {
+			tris.MakeSkirt( IceGenerator.Skirt );
 		}
 		
 		WriteToMesh();

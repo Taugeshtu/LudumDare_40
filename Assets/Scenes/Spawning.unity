@@ -3847,7 +3847,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!23 &1255703906
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -4138,12 +4138,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 05ddfe87f7645d047ab29673f556e486, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_iceIterations: 30
+  m_iceIterations: 1
   m_player: {fileID: 1104547649}
   m_penguinPrefab: {fileID: 1830831777}
   m_populationSize:
-    x: 50
-    y: 150
+    x: 0
+    y: 0
+  m_monsterPrefab: {fileID: 0}
+  m_majorPaceLoop: 120
+  m_majorAmplitude: 3
+  m_minorsCount: 4
+  m_minorAmplitude: 1
+  m_monsterValue: 1
+  m_singleMonsterChance: 0.25
 --- !u!4 &1534409776
 Transform:
   m_ObjectHideFlags: 0
@@ -4452,9 +4459,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_material: {fileID: 2100000, guid: eb8fbd9959f6d47498c24b78be091871, type: 2}
-  m_genRadius: 7
+  m_genRadius: 30
   m_stitchRadius: 20
   m_coercion: {x: 1, y: 3}
+  m_skirt: {x: 0, y: 10, z: 0}
 --- !u!4 &1843857862
 Transform:
   m_ObjectHideFlags: 0

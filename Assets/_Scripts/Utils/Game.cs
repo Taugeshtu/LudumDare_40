@@ -3,6 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 
 public class Game : MonoSingular<Game> {
+	private enum GameState {
+		InGame
+	}
+	
 	[SerializeField] private int m_iceIterations = 40;
 	[SerializeField] private Player m_player;
 	
@@ -10,29 +14,42 @@ public class Game : MonoSingular<Game> {
 	[SerializeField] private Penguin m_penguinPrefab;
 	[SerializeField] private Vector2i m_populationSize;
 	
-	[Header( "Penguins" )]
-	[SerializeField] private float m_majorPaceLoop = 60f;
+	[Header( "Monsters" )]
+	[SerializeField] private Monster m_monsterPrefab;
+	
+	[Header( "Pace" )]
+	[SerializeField] private float m_majorPaceLoop = 120f;
+	[SerializeField] private float m_majorAmplitude = 3f;
+	
 	[SerializeField] private float m_minorsCount = 4f;
+	[SerializeField] private float m_minorAmplitude = 1f;
 	
-	private Iceberg m_playerIceberg;
+	[Header( "Balancing" )]
+	[SerializeField] private float m_monsterValue = 1f;
+	[SerializeField] private float m_singleMonsterChance = 0.25f;
+	
+	private GameState m_state;
 	private float m_gameStartTime;
+	private Iceberg m_playerIceberg;
 	
-	private float _timeRunning {
-		get { return (Time.time - m_gameStartTime); }
-	}
+	private float m_currentValue;
 	
-	public static Penguin PenguinPrefab {
-		get { return s_Instance.m_penguinPrefab; }
-	}
+	private float _timeRunning { get { return (Time.time - m_gameStartTime); } }
+	
+	public static Penguin PenguinPrefab { get { return s_Instance.m_penguinPrefab; } }
+	public static Monster MonsterPrefab { get { return s_Instance.m_monsterPrefab; } }
 	
 #region Implementation
 	void Awake() {
 		m_penguinPrefab.gameObject.SetActive( false );
 		StartGame();
+		_DebugPace();
 	}
 	
 	void Update() {
-		_RunPacemaker();
+		if( m_state == GameState.InGame ) {
+			_RunGameLogic();
+		}
 	}
 #endregion
 	
@@ -65,20 +82,60 @@ public class Game : MonoSingular<Game> {
 		}
 	}
 	
-	private void _RunPacemaker() {
-		var progress = _timeRunning;
+	private void _DebugPace() {
+		var last = 0f;
+		var xScale = m_minorsCount /60f;
+		for( var i = 0; i < m_majorPaceLoop; i++ ) {
+			var pace = _GetPace( i );
+			
+			var p1 = Vector3.right *xScale *(i - 1) + Vector3.up *last + Vector3.up *10;
+			var p2 = Vector3.right *xScale *(i) + Vector3.up *pace + Vector3.up *10;
+			last = pace;
+			Draw.Line( p1, p2, Palette.yellow, 5 );
+		}
+	}
+	
+	private float _GetPace( float time ) {
+		var factor = Mathf.InverseLerp( 0f, m_majorPaceLoop, time );
 		
 		var majorMax = 0.7f *Mathf.PI;
-		var majorFactor = Mathf.InverseLerp( 0f, m_majorPaceLoop, progress );
-		var majorPace = Mathf.Sin( majorFactor *majorMax );
+		var majorPace = Mathf.Sin( factor *majorMax );
 		
 		var minorMax = (m_minorsCount - 0.5f) *Mathf.PI *2;
-		var minorFactor = majorFactor;
-		var minorPace = Mathf.Cos( minorFactor *minorMax );
-		minorPace = Mathf.Max( minorPace, 0 );
+		var minorPace = Mathf.Cos( factor *minorMax );
+		if( minorPace < 0 ) {
+			minorPace /= 2;
+		}
 		
-		var pace = majorPace + minorPace;
+		var pace = (majorPace *m_majorAmplitude) + (minorPace *m_minorAmplitude);
+		return pace;
+	}
+	
+	private void _RunGameLogic() {
+		var monstersAlive = 0;
+		foreach( var monster in m_playerIceberg.Monsters ) {
+			if( monster.IsAlive ) {
+				monstersAlive += 1;
+			}
+		}
 		
+		if( monstersAlive > 0 ) {
+			return;
+		}
+		
+		if( m_currentValue > 0 ) {
+			return;
+		}
+		
+		var pace = _GetPace( _timeRunning );
+		var monstersToSpawn = Mathf.Round( pace );
+		if( Dice.Roll( m_singleMonsterChance ) ) {
+			monstersToSpawn = 1;
+		}
+		
+		for( var i = 0; i < monstersToSpawn; i++ ) {
+			m_playerIceberg.SpawnMonster();
+		}
 	}
 #endregion
 	

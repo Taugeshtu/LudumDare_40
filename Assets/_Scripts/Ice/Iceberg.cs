@@ -14,7 +14,10 @@ public class Iceberg : MonoBehaviour {
 	private float m_maxSpeed = 2f;
 	
 	private List<Penguin> m_penguins = new List<Penguin>();
+	private List<Monster> m_monsters = new List<Monster>();
 	private Player m_player;
+	
+	public IList<Monster> Monsters { get { return m_monsters; } }
 	
 #region Implementation
 	void FixedUpdate() {
@@ -56,9 +59,14 @@ public class Iceberg : MonoBehaviour {
 		}
 	}
 	
+	public void SpawnMonster() {
+		
+	}
+	
 	public void Split( Vector3 position, Vector3 direction ) {
 		var drifters = Mesh.Split( position, direction );
 		var newIceberg = IceGenerator.Generate( drifters );
+		
 		var drift = direction.normalized *m_maxSpeed;
 		newIceberg.m_drift = drift;
 		newIceberg.m_driftStartTime = Time.time + m_driftDelay;
@@ -106,6 +114,17 @@ public class Iceberg : MonoBehaviour {
 		else {
 			return null;
 		}
+	}
+	
+	private Vector3 _GetPositionForMonster() {
+		var bounds = Mesh.ActualMesh.bounds;
+		var point = Random.insideUnitCircle.normalized;
+		point *= bounds.size.magnitude + 5;
+		return point;
+	}
+	
+	private Monster _SpawnMonster( Vector3 position ) {
+		return null;
 	}
 	
 	private void _ProcessDrift() {
