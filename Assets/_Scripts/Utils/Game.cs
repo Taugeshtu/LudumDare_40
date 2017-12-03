@@ -33,6 +33,7 @@ public class Game : MonoSingular<Game> {
 	[SerializeField] private float m_valueDropSeconds = 5f;
 	[SerializeField] private float m_monsterValue = 1f;
 	[SerializeField] private float m_singleMonsterChance = 0.25f;
+	[SerializeField] private int m_debugMonstersScaler = 1;
 	
 	private GameState m_state = GameState.NotReady;
 	private float m_gameStartTime;
@@ -147,6 +148,7 @@ public class Game : MonoSingular<Game> {
 		if( Dice.Roll( m_singleMonsterChance ) ) {
 			monstersToSpawn = 1;
 		}
+		monstersToSpawn *= m_debugMonstersScaler;
 		
 		Extensions.TimeLogError( "Going to spawn "+monstersToSpawn+" monsters!" );
 		

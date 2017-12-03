@@ -33,11 +33,6 @@ public class IcebergMesh : BigMesh<SimpleVertex> {
 			var newPosition = vertex.Position + Vector3.up *heightChange;
 			vertex.Properties.Position = newPosition;
 		}
-		
-		var trisCopy = new List<Triangle<SimpleVertex>>( m_triangles );
-		foreach( var tris in trisCopy ) {
-			tris.MakeSkirt( Vector3.up *10 );
-		}
 	}
 	
 	public void RegisterTriangles( List<Triangle<SimpleVertex>> triangles ) {
@@ -108,6 +103,46 @@ public class IcebergMesh : BigMesh<SimpleVertex> {
 		SyncVerticesToTriangles();
 		
 		return drifters;
+	}
+	
+	public void UnSkirt( Vector3 forNormal ) {
+		var toRemove = new List<Triangle<SimpleVertex>>();
+		foreach( var tris in m_triangles ) {
+			if( Vector3.Angle( tris.Normal, forNormal ) > 60 ) {
+				toRemove.Add( tris );
+			}
+		}
+		
+		foreach( var tris in toRemove ) {
+			DestroyTriangle( tris );
+		}
+	}
+	
+	public void ReSkirt( Vector3 forNormal ) {
+		var outline = GetOutline( m_triangles );
+		foreach( var edge in outline ) {
+			// edge.DrawMe( Palette.yellow, 1, 2 );
+			
+			var a = new Vertex<SimpleVertex>( edge.V1, null );
+			var b = new Vertex<SimpleVertex>( edge.V2, null );
+			var c = new Vertex<SimpleVertex>( a, null );
+			var d = new Vertex<SimpleVertex>( b, null );
+			c.Properties.Position = c.Position - forNormal;
+			d.Properties.Position = d.Position - forNormal;
+			
+			var vertices1 = new Vertex<SimpleVertex>[] { a, b, d };
+			var vertices2 = new Vertex<SimpleVertex>[] { a, d, c };
+			
+			// HACK- adding inverse triangles
+			var vertices3 = new Vertex<SimpleVertex>[] { a, d, b };
+			var vertices4 = new Vertex<SimpleVertex>[] { a, c, d };
+			
+			var t1 = _EmitTriangle( vertices1 );
+			var t2 = _EmitTriangle( vertices2 );
+			
+			AddTriangle( t1 );
+			AddTriangle( t2 );
+		}
 	}
 	
 	private List<Triangle<SimpleVertex>> _FilterCrack( Vector3 point, Vector3 originalDirection,

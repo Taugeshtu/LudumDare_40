@@ -18,9 +18,10 @@ public class Iceberg : MonoBehaviour {
 	
 	private List<Penguin> m_penguins = new List<Penguin>();
 	private List<Monster> m_monsters = new List<Monster>();
-	private Player m_player;
 	
+	public IList<Penguin> Penguins { get { return m_penguins; } }
 	public IList<Monster> Monsters { get { return m_monsters; } }
+	public Player Player { get; private set; }
 	
 #region Implementation
 	void FixedUpdate() {
@@ -47,15 +48,24 @@ public class Iceberg : MonoBehaviour {
 		entity.Link( this );
 		entity.transform.SetParent( transform, true );
 		
-		if( entity is Player ) {
-			m_player = entity as Player;
+		if( entity is Player ) { Player = entity as Player; }
+		else if( entity is Penguin ) { m_penguins.Add( entity as Penguin ); }
+		else if( entity is Monster ) { m_monsters.Add( entity as Monster ); }
+	}
+	
+	public void TransferEntity( IcebergEntity entity, Iceberg target ) {
+		if( entity == null ) {
+			Extensions.TimeLogWarning( "This shouldn't happen. Trying to add null entity to Iceberg!", gameObject );
+			return;
 		}
-		else if( entity is Penguin ) {
-			m_penguins.Add( entity as Penguin );
-		}
-		else if( entity is Monster ) {
-			m_monsters.Add( entity as Monster );
-		}
+		
+		m_entities.Remove( entity );
+		
+		if( entity is Player ) { Player = null; }
+		else if( entity is Penguin ) { m_penguins.Remove( entity as Penguin ); }
+		else if( entity is Monster ) { m_monsters.Remove( entity as Monster ); }
+		
+		target.AddEntity( entity );
 	}
 	
 	public void SpawnPenguins( int count ) {
@@ -83,8 +93,11 @@ public class Iceberg : MonoBehaviour {
 	}
 	
 	public void Split( Vector3 position, Vector3 direction ) {
+		Mesh.UnSkirt( IceGenerator.Skirt );
 		var drifters = Mesh.Split( position, direction );
-		// TODO: weld, unweld, unskirt, re-skirt!
+		Mesh.WeldVertices();
+		Mesh.ReSkirt( IceGenerator.Skirt );
+		Mesh.MakeVerticesUnique();
 		
 		Mesh.WriteToMesh();
 		
@@ -101,16 +114,15 @@ public class Iceberg : MonoBehaviour {
 			inverted = true;
 		}
 		
-		var sadTimes = new List<Penguin>();
-		foreach( var pengu in m_penguins ) {
-			if( plane.GetSide( pengu.transform.position, inverted ) ) {
-				sadTimes.Add( pengu );
+		var entitiesLeaving = new List<IcebergEntity>();
+		foreach( var entity in m_entities ) {
+			if( plane.GetSide( entity.transform.position, inverted ) ) {
+				entitiesLeaving.Add( entity );
 			}
 		}
 		
-		foreach( var sadPengu in sadTimes ) {
-			m_penguins.Remove( sadPengu );
-			sadPengu.transform.SetParent( newIceberg.transform, true );
+		foreach( var entity in entitiesLeaving ) {
+			TransferEntity( entity, newIceberg );
 		}
 	}
 	

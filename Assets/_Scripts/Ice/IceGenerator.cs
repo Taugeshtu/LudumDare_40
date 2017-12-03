@@ -38,10 +38,13 @@ public class IceGenerator : MonoSingular<IceGenerator> {
 	public static Iceberg Generate( Vector3 pivotPosition, List<Triangle<SimpleVertex>> triangles ) {
 		var iceberg = _PrepareIceberg( pivotPosition );
 		
+		// Note: dirty hacking here!
 		iceberg.Mesh.RegisterTriangles( triangles );
-		foreach( var tris in triangles ) {
-			tris.MakeSkirt( Skirt );
-		}
+		// iceberg.Mesh.UnSkirt( Skirt );
+		
+		iceberg.Mesh.WeldVertices();
+		iceberg.Mesh.ReSkirt( Skirt );
+		iceberg.Mesh.MakeVerticesUnique();
 		
 		iceberg.Mesh.WriteToMesh();
 		return iceberg;
@@ -55,6 +58,7 @@ public class IceGenerator : MonoSingular<IceGenerator> {
 		}
 		
 		iceberg.Mesh.Coerce( Coercion.x, Coercion.y );
+		iceberg.Mesh.ReSkirt( Skirt );
 		iceberg.Mesh.MakeVerticesUnique();
 		iceberg.Mesh.WriteToMesh();
 		

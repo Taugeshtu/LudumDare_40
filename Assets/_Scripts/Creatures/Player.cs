@@ -57,6 +57,8 @@ public class Player : CreatureBase {
 	
 	protected override void _Move() {
 		base._Move();
+		
+		// TODO: plug in animations
 	}
 	
 	private void _GetCut( out Vector3 point, out Vector3 direction ) {

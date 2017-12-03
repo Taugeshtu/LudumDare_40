@@ -4,6 +4,8 @@ using System.Collections.Generic;
 public class IcebergEntity : MonoBehaviour {
 	protected Iceberg m_iceberg;
 	
+	public Vector3 Position { get { return transform.localPosition; } }
+	
 #region Implementation
 #endregion
 	
