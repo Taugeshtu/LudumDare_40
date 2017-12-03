@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using MathMeshes;
 
 public class IcebergMesh : BigMesh<SimpleVertex> {
-	private List<Edge> m_outerEdges = new List<Edge>();
+	private List<Edge<SimpleVertex>> m_outerEdges = new List<Edge<SimpleVertex>>();
 	
 	public bool ShouldDraw = false;
 	
@@ -50,11 +50,7 @@ public class IcebergMesh : BigMesh<SimpleVertex> {
 		var replacements = new List<Triangle<SimpleVertex>>();
 		var drifters = Split( position, direction, replacements );
 		
-		Extensions.TimeLogError( "Tris: "+m_triangles.Count+", Verts: "+m_vertices.Count+", should be: "+(m_triangles.Count *3) );
-		
-		var optimized = Optimize( replacements );
-		
-		foreach( var tris in optimized ) {
+		foreach( var tris in replacements ) {
 			tris.MakeSkirt( IceGenerator.Skirt );
 		}
 		
@@ -74,9 +70,9 @@ public class IcebergMesh : BigMesh<SimpleVertex> {
 		
 		var tris = AddTriangle( vertices );
 		
-		m_outerEdges.Add( new Edge( tris.Vertices[0], tris.Vertices[1] ) );
-		m_outerEdges.Add( new Edge( tris.Vertices[1], tris.Vertices[2] ) );
-		m_outerEdges.Add( new Edge( tris.Vertices[2], tris.Vertices[0] ) );
+		m_outerEdges.Add( new Edge<SimpleVertex>( tris.Vertices[0], tris.Vertices[1] ) );
+		m_outerEdges.Add( new Edge<SimpleVertex>( tris.Vertices[1], tris.Vertices[2] ) );
+		m_outerEdges.Add( new Edge<SimpleVertex>( tris.Vertices[2], tris.Vertices[0] ) );
 		
 		return;
 	}
@@ -91,12 +87,12 @@ public class IcebergMesh : BigMesh<SimpleVertex> {
 		}
 	}
 	
-	private void _SpawnFrom( Edge edge, float genRadius, float searchRadius ) {
+	private void _SpawnFrom( Edge<SimpleVertex> edge, float genRadius, float searchRadius ) {
 		var direction = (edge.V2.Position - edge.V1.Position);
 		var midpoint = edge.Midpoint;
 		
 		Vertex<SimpleVertex> foundVertex = null;
-		Edge foundEdge = null;
+		Edge<SimpleVertex> foundEdge = null;
 		
 		var shouldFlip = _TryFindAngleStitch( edge, ref foundEdge, ref foundVertex );
 		if( foundVertex == null ) {
@@ -126,13 +122,13 @@ public class IcebergMesh : BigMesh<SimpleVertex> {
 		}
 	}
 	
-	private bool _TryFindAngleStitch( Edge edge, ref Edge foundEdge, ref Vertex<SimpleVertex> foundVertex ) {
+	private bool _TryFindAngleStitch( Edge<SimpleVertex> edge, ref Edge<SimpleVertex> foundEdge, ref Vertex<SimpleVertex> foundVertex ) {
 		var direction = edge.Direction;
 		var midpoint = edge.Midpoint;
 		var shouldFlip = false;
 		
 		foreach( var outerEdge in m_outerEdges ) {
-			if( !outerEdge.SharesVertex( edge ) ) {
+			if( outerEdge.SharedVertexCount( edge ) != 1 ) {
 				continue;
 			}
 			
@@ -178,14 +174,14 @@ public class IcebergMesh : BigMesh<SimpleVertex> {
 		return shouldFlip;
 	}
 	
-	private bool _TryFindDistanceStitch( Edge edge, float searchRadius, ref Edge foundEdge, ref Vertex<SimpleVertex> foundVertex ) {
+	private bool _TryFindDistanceStitch( Edge<SimpleVertex> edge, float searchRadius, ref Edge<SimpleVertex> foundEdge, ref Vertex<SimpleVertex> foundVertex ) {
 		var direction = edge.Direction;
 		var midpoint = edge.Midpoint;
 		var distance = float.MaxValue;
 		var shouldFlip = false;
 		
 		foreach( var outerEdge in m_outerEdges ) {
-			if( !outerEdge.SharesVertex( edge ) ) {
+			if( outerEdge.SharedVertexCount( edge ) != 1 ) {
 				continue;
 			}
 			
@@ -210,7 +206,7 @@ public class IcebergMesh : BigMesh<SimpleVertex> {
 		return shouldFlip;
 	}
 	
-	private void _Stitch( Edge edge, Edge stitchTo, Vertex<SimpleVertex> byVertex ) {
+	private void _Stitch( Edge<SimpleVertex> edge, Edge<SimpleVertex> stitchTo, Vertex<SimpleVertex> byVertex ) {
 		if( ShouldDraw ) {
 			Draw.RayFromTo( edge.Midpoint, byVertex.Position, Palette.cyan, 0.5f, 2f );
 		}
@@ -226,12 +222,12 @@ public class IcebergMesh : BigMesh<SimpleVertex> {
 		AbortMeshWriting();
 		m_triangles.Add( tris );
 		
-		m_outerEdges.Add( new Edge( byVertex, otherNonShared ) );
+		m_outerEdges.Add( new Edge<SimpleVertex>( byVertex, otherNonShared ) );
 		m_outerEdges.Remove( edge );
 		m_outerEdges.Remove( stitchTo );
 	}
 	
-	private void _Expand( Edge edge, Vector3 position ) {
+	private void _Expand( Edge<SimpleVertex> edge, Vector3 position ) {
 		var newVertex = _EmitVertex( position );
 		var vertices = new Vertex<SimpleVertex>[] {
 			edge.V1,
@@ -244,8 +240,8 @@ public class IcebergMesh : BigMesh<SimpleVertex> {
 		AbortMeshWriting();
 		m_triangles.Add( tris );
 		
-		m_outerEdges.Add( new Edge( edge.V1, newVertex ) );
-		m_outerEdges.Add( new Edge( newVertex, edge.V2 ) );
+		m_outerEdges.Add( new Edge<SimpleVertex>( edge.V1, newVertex ) );
+		m_outerEdges.Add( new Edge<SimpleVertex>( newVertex, edge.V2 ) );
 		m_outerEdges.Remove( edge );
 	}
 #endregion

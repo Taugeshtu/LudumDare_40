@@ -4238,12 +4238,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 05ddfe87f7645d047ab29673f556e486, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_iceIterations: 20
+  m_iceIterations: 1
   m_player: {fileID: 1104547649}
   m_penguinPrefab: {fileID: 1830831777}
   m_populationSize:
-    x: 15
-    y: 50
+    x: 0
+    y: 0
   m_monsterPrefab: {fileID: 1614519015}
   m_majorPaceLoop: 120
   m_majorAmplitude: 3
