@@ -3790,8 +3790,8 @@ MonoBehaviour:
     m_valueScale: 1
     m_points:
     - {x: 0, y: 0}
-    - {x: 0.1, y: 10}
-    - {x: 1, y: 20}
+    - {x: 0.1, y: 5}
+    - {x: 1, y: 10}
   m_castRadius: 0.2
   m_castDepth: 0.5
   m_shouldDraw: 1
@@ -4497,8 +4497,8 @@ MonoBehaviour:
     m_valueScale: 1
     m_points:
     - {x: 0, y: 0}
-    - {x: 0.1, y: 10}
-    - {x: 1, y: 20}
+    - {x: 0.1, y: 5}
+    - {x: 1, y: 10}
   m_castRadius: 0.3
   m_castDepth: 0.7
   m_shouldDraw: 0

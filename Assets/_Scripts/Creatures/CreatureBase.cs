@@ -76,6 +76,9 @@ public abstract class CreatureBase : IcebergEntity {
 			_rigidbody.AddForce( pushout, ForceMode.Acceleration );
 			m_isInContact = true;
 		}
+		else {
+			_rigidbody.AddForce( Physics.gravity, ForceMode.Acceleration );
+		}
 	}
 	
 	private void _UpdateTurn() {
