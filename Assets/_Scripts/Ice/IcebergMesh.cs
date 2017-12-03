@@ -68,6 +68,8 @@ public class IcebergMesh : BigMesh<SimpleVertex> {
 		
 		WeldVertices();
 		
+		Extensions.TimeLogError( "Verts: "+m_vertices.Count );
+		
 		var trisCopy = new List<Triangle<SimpleVertex>>( m_triangles );
 		var drifters = new List<Triangle<SimpleVertex>>();
 		
@@ -101,12 +103,17 @@ public class IcebergMesh : BigMesh<SimpleVertex> {
 		drifters.AddRange( startTris.TrySplit( ref plane, inverted, replacements, out section ) );
 		
 		trisCopy.Remove( startTris );
+		foreach( var startTrisReplacement in replacements ) { trisCopy.Remove( startTrisReplacement ); }
 		trisCopy = _FilterCrack( position, direction, startTris, trisCopy );
 		
-		startTris.DrawMe( Palette.blue );
+		_CrackSide( startTris, section[0], directionLeft, trisCopy, drifters, replacements, true );
+		_CrackSide( startTris, section[1], directionRight, trisCopy, drifters, replacements, true );
 		
-		_CrackSide( startTris, section[0], directionLeft, trisCopy, drifters, replacements );
-		_CrackSide( startTris, section[1], directionRight, trisCopy, drifters, replacements );
+		foreach( var t in replacements ) {
+			t.DrawMe( Palette.yellow );
+		}
+		
+		Extensions.TimeLogError( "Cracked! Drifters: "+drifters.Count+", replacements: "+replacements.Count );
 		
 		foreach( var leftover in trisCopy ) {
 			DestroyTriangle( leftover );
@@ -114,7 +121,7 @@ public class IcebergMesh : BigMesh<SimpleVertex> {
 		}
 		drifters.AddRange( trisCopy );
 		
-		// replacements = new List<Triangle<SimpleVertex>>( Optimize( replacements ) );
+		replacements = new List<Triangle<SimpleVertex>>( Optimize( replacements ) );
 		foreach( var newTriangle in replacements ) {
 			AddTriangle( newTriangle );
 		}
@@ -122,7 +129,9 @@ public class IcebergMesh : BigMesh<SimpleVertex> {
 		return drifters;
 	}
 	
-	private List<Triangle<SimpleVertex>> _FilterCrack( Vector3 point, Vector3 originalDirection, Triangle<SimpleVertex> parent, List<Triangle<SimpleVertex>> triangles ) {
+	private List<Triangle<SimpleVertex>> _FilterCrack( Vector3 point, Vector3 originalDirection,
+					Triangle<SimpleVertex> parent,
+					List<Triangle<SimpleVertex>> triangles ) {
 		var inverted = false;
 		var plane = _GetSplitPlane( point, originalDirection, out inverted );
 		
@@ -130,7 +139,7 @@ public class IcebergMesh : BigMesh<SimpleVertex> {
 			var tris = triangles[i];
 			var siding = tris._GetSide( ref plane, inverted );
 			if( siding == -1 ) {
-				Draw.Cross( tris.Center, Palette.red, 3, 2 );
+				// Draw.Cross( tris.Center, Palette.red, 3, 2 );
 				triangles.RemoveAt( i );
 			}
 		}
@@ -138,29 +147,39 @@ public class IcebergMesh : BigMesh<SimpleVertex> {
 		var joinedTriangles = new List<Triangle<SimpleVertex>>();
 		joinedTriangles.Add( parent );
 		
-		for( var a = triangles.Count - 1; a >= 0; a-- ) {
-			var tris = triangles[a];
-			triangles.RemoveAt( a );
-			
-			for( var b = 0; b < joinedTriangles.Count; b++ ) {
-				var joined = joinedTriangles[b];
-				if( tris.SharesSide( joined ) ) {
-					joinedTriangles.Add( tris );
-					break;
+		var foundJoin = true;
+		while( foundJoin ) {
+			for( var a = 0; a < joinedTriangles.Count; a++ ) {
+				var joined = joinedTriangles[a];
+				foundJoin = false;
+				
+				for( var b = triangles.Count - 1; b >= 0; b-- ) {
+					var tris = triangles[b];
+					if( tris.SharesSide( joined ) ) {
+						triangles.RemoveAt( b );
+						joinedTriangles.Add( tris );
+						foundJoin = true;
+						
+						// tris.DrawMe( Palette.violet );
+						break;
+					}
 				}
+				if( foundJoin ) { break; }
 			}
 		}
 		
+		joinedTriangles.Remove( parent );
 		return joinedTriangles;
 	}
 	
 	private void _CrackSide( Triangle<SimpleVertex> parent, Vector3 point, Vector3 originalDirection,
-		List<Triangle<SimpleVertex>> triangles,
-		List<Triangle<SimpleVertex>> drifters,
-		List<Triangle<SimpleVertex>> replacements ) {
+					List<Triangle<SimpleVertex>> triangles,
+					List<Triangle<SimpleVertex>> drifters,
+					List<Triangle<SimpleVertex>> replacements, bool debug = false ) {
 		var inverted = false;
 		var plane = _GetSplitPlane( point, originalDirection, out inverted );
 		
+		var debs = "Replacements: "+replacements.Count;
 		for( var i = triangles.Count - 1; i >= 0; i-- ) {
 			var tris = triangles[i];
 			var siding = tris._GetSide( ref plane, inverted );
@@ -169,17 +188,22 @@ public class IcebergMesh : BigMesh<SimpleVertex> {
 				if( tris.SharesSide( parent ) ) {
 					triangles.RemoveAt( i );
 					
-					Draw.RayFromToCross( parent.Center, tris.Center, Palette.orange, 1, 2 );
+					// Draw.RayFromToCross( parent.Center, tris.Center, Palette.orange, 1, 2 );
 					
 					var section = new Vector3[2];
 					drifters.AddRange( tris.TrySplit( ref plane, inverted, replacements, out section ) );
+					debs += "\nPost-split: "+replacements.Count;
 					
-					tris.DrawMe( Palette.darkCyan );
+					// tris.DrawMe( Palette.darkCyan );
 					var newPoint = section[0].EpsilonEquals( point ) ? section[1] : section[0];
 					_CrackSide( tris, newPoint, originalDirection, triangles, drifters, replacements );
+					debs += "\nPost-crack prop: "+replacements.Count;
 					break;
 				}
 			}
+		}
+		if( debug ) {
+			Extensions.TimeLogError( debs );
 		}
 	}
 #endregion

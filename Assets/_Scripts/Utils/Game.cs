@@ -11,6 +11,7 @@ public class Game : MonoSingular<Game> {
 		StatsScreen
 	}
 	
+	[SerializeField] private int m_seed;
 	[SerializeField] private int m_iceIterations = 40;
 	[SerializeField] private Player m_player;
 	
@@ -46,6 +47,8 @@ public class Game : MonoSingular<Game> {
 	
 #region Implementation
 	void Awake() {
+		Random.InitState( m_seed );
+		
 		m_penguinPrefab.gameObject.SetActive( false );
 		m_monsterPrefab.gameObject.SetActive( false );
 		
