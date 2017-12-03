@@ -2,16 +2,22 @@
 using System.Collections.Generic;
 
 public class Player : CreatureBase {
+	[Header( "Ice-split" )]
 	[SerializeField] private float m_splitReach = 1.5f;
 	[SerializeField] private Transform m_splitUI;
 	
-	private Vector2 m_moveDirection;
+	protected override int _layerMask {
+		get { return (1 << 8) + (1 << 9); }	// Note: because Player can actually walk on monsters
+	}
 	
 #region Implementation
 	void Update() {
 		var xAxis = Input.GetAxis( "Horizontal" );
 		var yAxis = Input.GetAxis( "Vertical" );
-		m_moveDirection = new Vector2( xAxis, yAxis );
+		m_moveDirection = (new Vector2( xAxis, yAxis )).X0Y();
+		if( m_moveDirection.magnitude > 1f ) {
+			m_moveDirection = m_moveDirection.normalized;
+		}
 		
 		var point = Vector3.zero;
 		var direction = Vector3.zero;
@@ -34,8 +40,15 @@ public class Player : CreatureBase {
 	
 	
 #region Private
+	protected override void _Ignite() {
+		var allChildren = GetComponentsInChildren<Transform>();
+		foreach( var child in allChildren ) {
+			child.gameObject.layer = 10;
+		}
+	}
+	
 	protected override void _Move() {
-		_ReachNewVelocity( m_moveDirection.X0Y() );
+		base._Move();
 	}
 	
 	private void _GetCut( out Vector3 point, out Vector3 direction ) {

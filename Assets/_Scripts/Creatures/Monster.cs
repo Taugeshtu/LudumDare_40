@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 
-public class Monster : MonoBehaviour {
+public class Monster : CreatureBase {
 	
 #region Implementation
 #endregion

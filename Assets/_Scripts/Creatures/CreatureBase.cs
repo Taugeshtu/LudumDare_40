@@ -2,16 +2,23 @@
 using System.Collections.Generic;
 
 public abstract class CreatureBase : MonoBehaviour {
+	[Header( "Movement" )]
+	[SerializeField] protected float m_speed = 4f;
+	[SerializeField] protected float m_acceleration = 0.5f;
+	[SerializeField] protected float m_deacceleration = 0.9f;
+	
+	[Header( "Physics" )]
 	[SerializeField] private ValueCurve m_pushoutScale;
 	[SerializeField] private float m_castRadius = 0.2f;
 	[SerializeField] private float m_castDepth = 1f;
-	[SerializeField] private int m_historyDepth = 10;
-	[SerializeField] protected float m_speed = 3f;
-	[SerializeField] protected float m_acceleration = 6f;
+	
+	[Header( "Misc" )]
+	[SerializeField] private bool m_shouldDraw = false;
+	[SerializeField] private int m_historyDepth = 35;
 	
 	private Queue<Vector2> m_positionsHistory = new Queue<Vector2>();
-	private bool m_shouldDraw = true;
-	private Vector3 m_velocity;
+	private bool m_isInContact;
+	protected Vector3 m_moveDirection;
 	
 	private Rigidbody m_rigid;
 	protected Rigidbody _rigidbody {
@@ -22,8 +29,15 @@ public abstract class CreatureBase : MonoBehaviour {
 	}
 	
 	protected Iceberg _iceberg { get; private set; }
+	protected virtual int _layerMask {
+		get { return (1 << 8); }
+	}
 	
 #region Implementation
+	void Awake() {
+		_Ignite();
+	}
+	
 	void FixedUpdate() {
 		_Move();
 		_Pushout();
@@ -51,21 +65,22 @@ public abstract class CreatureBase : MonoBehaviour {
 	
 #region Private
 	private void _Pushout() {
+		m_isInContact = false;
 		RaycastHit hit;
 		var ray = new Ray( transform.position + transform.up *m_castDepth, -transform.up );
-		if( Caster.SphereCast( ray, m_castRadius, out hit, m_castDepth, Physics.DefaultRaycastLayers, m_shouldDraw ) ) {
+		if( Caster.SphereCast( ray, m_castRadius, out hit, m_castDepth, _layerMask, m_shouldDraw ) ) {
 			var factor = Mathf.InverseLerp( m_castDepth, 0f, hit.distance );
 			
 			factor = m_pushoutScale.Evaluate( factor );
 			factor *= Physics.gravity.magnitude;
 			
 			var pushout = transform.up *factor;
-			_rigidbody.AddForce( -_rigidbody.velocity, ForceMode.VelocityChange );
+			var vertical = Vector3.Project( _rigidbody.velocity, Vector3.up );
+			_rigidbody.AddForce( -vertical, ForceMode.VelocityChange );
 			_rigidbody.AddForce( pushout, ForceMode.Acceleration );
+			m_isInContact = true;
 		}
 	}
-	
-	protected virtual void _Move() {}
 	
 	private void _UpdateTurn() {
 		var history = new List<Vector2>( m_positionsHistory );
@@ -80,14 +95,34 @@ public abstract class CreatureBase : MonoBehaviour {
 		}
 	}
 	
-	protected void _ReachNewVelocity( Vector3 newVelocity ) {
+	private void _ReachNewVelocity( Vector3 newVelocity ) {
 		var current = _rigidbody.velocity.XZ().X0Y();
 		newVelocity *= m_speed;
-		Vector3.SmoothDamp( current, newVelocity, ref m_velocity, m_acceleration *Time.fixedDeltaTime, m_speed );
 		
-		Draw.RayCross( transform.position, m_velocity, Palette.red, 0.5f );
+		var isAccelerating = (newVelocity.magnitude > current.magnitude);
+		var lerpFactor = isAccelerating ? m_acceleration : m_deacceleration;
 		
-		_rigidbody.AddForce( m_velocity, ForceMode.VelocityChange );
+		var lerped = Vector3.Lerp( current, newVelocity, lerpFactor );
+		var delta = lerped - current;
+		
+		if( m_shouldDraw ) {
+			Draw.RayCross( Vector3.zero, delta, Palette.red, 0.5f );
+			Draw.Ray( Vector3.zero, current, Palette.yellow, 0.5f );
+			Draw.Ray( Vector3.zero, newVelocity, Palette.violet, 0.5f );
+		}
+		
+		_rigidbody.AddForce( delta, ForceMode.VelocityChange );
+	}
+	
+	protected virtual void _Ignite() {
+		var allChildren = GetComponentsInChildren<Transform>();
+		foreach( var child in allChildren ) {
+			child.gameObject.layer = 9;
+		}
+	}
+	
+	protected virtual void _Move() {
+		_ReachNewVelocity( m_moveDirection );
 	}
 #endregion
 	

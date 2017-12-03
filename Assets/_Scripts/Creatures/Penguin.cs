@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 
-public class Penguin : MonoBehaviour {
+public class Penguin : CreatureBase {
 	
 #region Implementation
 #endregion

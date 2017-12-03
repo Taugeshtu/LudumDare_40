@@ -37,21 +37,31 @@ public class IcebergMesh : MathMesh<SimpleVertex> {
 		SplitTriangles();
 	}
 	
-	public void Split( Vector3 position, Vector3 direction ) {
+	public List<Triangle<SimpleVertex>> Split( Vector3 position, Vector3 direction ) {
 		var shift = Vector3.Project( position, direction );
 		var plane = new Plane( shift, -shift.magnitude );
+		var inverted = false;
+		if( Vector3.Angle( shift, direction ) > 90 ) {	// Meaning we're beyond zer0
+			inverted = true;
+		}
 		
 		var trisCopy = new List<Triangle<SimpleVertex>>( m_triangles );
 		var drifters = new List<Triangle<SimpleVertex>>();
 		foreach( var tris in trisCopy ) {
-			var drift = tris.TrySplit( ref plane );
+			var drift = tris.TrySplit( ref plane, inverted );
 			if( drift != null ) {
 				drifters.AddRange( drift );
 			}
 		}
 		
-		// TODO: move drifters into their own mesh and plonk away ^^
 		WriteToMesh();
+		return drifters;
+	}
+	
+	public void RegisterTriangles( List<Triangle<SimpleVertex>> triangles ) {
+		foreach( var tris in triangles ) {
+			AddTriangle( tris );
+		}
 	}
 #endregion
 	

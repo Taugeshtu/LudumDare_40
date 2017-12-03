@@ -30,11 +30,19 @@ public class IceGenerator : MonoSingular<IceGenerator> {
 	
 	
 #region Public
+	public static Iceberg Generate( List<Triangle<SimpleVertex>> triangles ) {
+		var mesh = _PrepareMesh();
+		var iceberg = mesh.Filter.gameObject.AddComponent<Iceberg>();
+		iceberg.Ignite( mesh );
+		iceberg.Mesh.RegisterTriangles( triangles );
+		iceberg.Mesh.WriteToMesh();
+		return iceberg;
+	}
+	
 	public static Iceberg Generate( int iterations ) {
-		var prep = _PrepareMesh();
-		
-		var iceberg = prep.Filter.gameObject.AddComponent<Iceberg>();
-		iceberg.Init( prep );
+		var mesh = _PrepareMesh();
+		var iceberg = mesh.Filter.gameObject.AddComponent<Iceberg>();
+		iceberg.Ignite( mesh );
 		
 		for( var i = 0; i < iterations; i++ ) {
 			iceberg.Mesh.SpawnTriangle( GenRadius, StitchRadius );
@@ -51,6 +59,8 @@ public class IceGenerator : MonoSingular<IceGenerator> {
 #region Private
 	private static IcebergMesh _PrepareMesh() {
 		var holder = new GameObject( "Iceberg" );
+		holder.layer = 8;
+		
 		var filter = holder.AddComponent<MeshFilter>();
 		var collider = holder.AddComponent<MeshCollider>();
 		var render = holder.AddComponent<MeshRenderer>();
