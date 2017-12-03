@@ -58,6 +58,11 @@ public abstract class CreatureBase : IcebergEntity {
 	
 	
 #region Public
+	public virtual void GetKilled() {
+		IsAlive = false;
+		// TODO: particle explosion!
+		
+	}
 #endregion
 	
 	
@@ -73,6 +78,8 @@ public abstract class CreatureBase : IcebergEntity {
 			factor *= Physics.gravity.magnitude;
 			
 			var pushout = transform.up *factor;
+			if( !IsAlive ) { pushout *= 0f; }
+			
 			var vertical = Vector3.Project( _rigidbody.velocity, Vector3.up );
 			_rigidbody.AddForce( -vertical, ForceMode.VelocityChange );
 			_rigidbody.AddForce( pushout, ForceMode.Acceleration );
@@ -124,6 +131,9 @@ public abstract class CreatureBase : IcebergEntity {
 	}
 	
 	protected virtual void _Move() {
+		if( !IsAlive ) {
+			m_moveDirection = Vector3.zero;
+		}
 		_ReachNewVelocity( m_moveDirection );
 	}
 #endregion

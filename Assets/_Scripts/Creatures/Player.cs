@@ -110,12 +110,14 @@ public class Player : CreatureBase {
 	}
 	
 	private void _OnAttackLanding() {
+		if( m_target != null ) {
+			m_target.GetKilled();
+		}
 		CameraShake.MakeAShake( false );
 	}
 	
 	private void _OnSplitLanding() {
 		// TODO: play animation!
-		Extensions.TimeLogError( "Landing a split!" );
 		
 		CameraShake.MakeAShake( true );
 		
@@ -165,6 +167,8 @@ public class Player : CreatureBase {
 	}
 	
 	protected override void _Ignite() {
+		base._Ignite();
+		
 		var allChildren = GetComponentsInChildren<Transform>();
 		foreach( var child in allChildren ) {
 			child.gameObject.layer = 10;
