@@ -45,14 +45,17 @@ public class SliceIndicator : MonoBehaviour {
 		var chunk = transform.right *_segmentWidth;
 		
 		var hits = new Vector3[m_count + 1];
+		var gotHits = new bool[m_count + 1];
 		for( var i = 0; i < hits.Length; i++ ) {
 			hits[i] = corner + chunk *i - Vector3.up *10;
+			gotHits[i] = false;
 			
 			var ray = new Ray( corner + chunk *i, Vector3.down );
 			RaycastHit hit;
 			var mask = (1 << 8);
 			if( Physics.Raycast( ray, out hit, 20f, mask ) ) {
 				hits[i] = hit.point;
+				gotHits[i] = true;
 			}
 		}
 		
@@ -67,6 +70,8 @@ public class SliceIndicator : MonoBehaviour {
 			m_segments[i].position = mid;
 			m_segments[i].rotation = rotation;
 			m_segments[i].localScale = scale;
+			
+			m_segments[i].gameObject.SetActive( gotHits[i] || gotHits[i + 1] );
 		}
 	}
 #endregion
