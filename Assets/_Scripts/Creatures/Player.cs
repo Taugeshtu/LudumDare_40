@@ -52,6 +52,10 @@ public class Player : CreatureBase {
 		else if( m_state == State.ChargingSplit ) {
 			m_splitUI.gameObject.SetActive( m_canSplit );
 		}
+		
+		if( Input.GetKeyDown( KeyCode.K ) ) {
+			Extensions.TimeLogError( "Max push: "+s_maxPushout );
+		}
 	}
 #endregion
 	

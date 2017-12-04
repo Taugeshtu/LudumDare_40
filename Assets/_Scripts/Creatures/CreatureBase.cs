@@ -67,6 +67,7 @@ public abstract class CreatureBase : IcebergEntity {
 #endregion
 	
 	
+	protected static float s_maxPushout;
 #region Private
 	private void _Pushout() {
 		m_isInContact = false;
@@ -85,6 +86,8 @@ public abstract class CreatureBase : IcebergEntity {
 				pushout = Vector3.zero;
 				vertical = Vector3.zero;
 			}
+			
+			s_maxPushout = Mathf.Max( s_maxPushout, pushout.magnitude );
 			
 			_rigidbody.AddForce( -vertical, ForceMode.VelocityChange );
 			_rigidbody.AddForce( pushout, ForceMode.Acceleration );

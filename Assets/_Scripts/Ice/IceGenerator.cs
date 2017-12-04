@@ -41,7 +41,7 @@ public class IceGenerator : MonoSingular<IceGenerator> {
 		
 		// Note: dirty hacking here!
 		iceberg.Mesh.RegisterTriangles( triangles );
-		// iceberg.Mesh.UnSkirt( Skirt );
+		iceberg.Mesh.UnSkirt( Skirt );
 		
 		iceberg.Mesh.WeldVertices();
 		iceberg.Mesh.ReSkirt( Skirt );

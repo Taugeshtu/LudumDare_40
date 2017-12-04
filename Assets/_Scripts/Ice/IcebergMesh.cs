@@ -116,7 +116,7 @@ public class IcebergMesh : BigMesh<SimpleVertex> {
 		}
 	}
 	
-	public void ReSkirt( Vector3 forNormal ) {
+	public void ReSkirt( Vector3 forNormal, bool bothSides = false ) {
 		var outline = GetOutline( m_triangles );
 		foreach( var edge in outline ) {
 			// edge.DrawMe( Palette.yellow, 1, 2 );
@@ -131,15 +131,23 @@ public class IcebergMesh : BigMesh<SimpleVertex> {
 			var vertices1 = new Vertex<SimpleVertex>[] { a, b, d };
 			var vertices2 = new Vertex<SimpleVertex>[] { a, d, c };
 			
-			// HACK- adding inverse triangles
-			var vertices3 = new Vertex<SimpleVertex>[] { a, d, b };
-			var vertices4 = new Vertex<SimpleVertex>[] { a, c, d };
-			
 			var t1 = _EmitTriangle( vertices1 );
 			var t2 = _EmitTriangle( vertices2 );
 			
 			AddTriangle( t1 );
 			AddTriangle( t2 );
+			
+			// HACK- adding inverse triangles
+			if( bothSides || true ) {
+				var vertices3 = new Vertex<SimpleVertex>[] { a, d, b };
+				var vertices4 = new Vertex<SimpleVertex>[] { a, c, d };
+				
+				var t3 = _EmitTriangle( vertices3 );
+				var t4 = _EmitTriangle( vertices4 );
+				
+				AddTriangle( t3 );
+				AddTriangle( t4 );
+			}
 		}
 	}
 	
