@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -8,7 +9,8 @@ public class Game : MonoSingular<Game> {
 		Menu,
 		Tutorial,
 		InGame,
-		StatsScreen
+		StatsScreen,
+		Results
 	}
 	
 	[SerializeField] private int m_seed;
@@ -35,6 +37,12 @@ public class Game : MonoSingular<Game> {
 	[SerializeField] private float m_singleMonsterChance = 0.25f;
 	[SerializeField] private int m_debugMonstersScaler = 1;
 	
+	[Header( "Links" )]
+	[SerializeField] private GameObject m_menuRoot;
+	[SerializeField] private Slider m_gameProgressRoot;
+	[SerializeField] private GameObject m_resultsRoot;
+	[SerializeField] private Text m_resultText;
+	
 	private GameState m_state = GameState.NotReady;
 	private float m_gameStartTime;
 	private Iceberg m_playerIceberg;
@@ -42,34 +50,84 @@ public class Game : MonoSingular<Game> {
 	private float m_currentValue;
 	
 	private float _timeRunning { get { return (Time.time - m_gameStartTime); } }
+	private float _progress { get { return _timeRunning/m_majorPaceLoop; } }
 	
 	public static Penguin PenguinPrefab { get { return s_Instance.m_penguinPrefab; } }
 	public static Monster MonsterPrefab { get { return s_Instance.m_monsterPrefab; } }
 	
 #region Implementation
+	private void _ToggleUI() {
+		m_menuRoot.SetActive( m_state == GameState.Menu );
+		m_gameProgressRoot.gameObject.SetActive( m_state == GameState.InGame );
+		m_resultsRoot.SetActive( m_state == GameState.Results );
+	}
+	
 	void Awake() {
-		Random.InitState( m_seed );
+		if( m_seed >= 0 ) {
+			Random.InitState( m_seed );
+		}
 		
 		m_penguinPrefab.gameObject.SetActive( false );
 		m_monsterPrefab.gameObject.SetActive( false );
 		
-		StartGame();
-		_DebugPace();
+		// StartGame();
+		// _DebugPace();
+		
+		_GoMenu();
 	}
 	
 	void Update() {
 		if( m_state == GameState.InGame ) {
 			_RunGameLogic();
 		}
+		
+		if( Input.GetKeyDown( KeyCode.Escape ) ) {
+			if( m_state == GameState.InGame ) {
+				_GoMenu();
+			}
+		}
+	}
+	
+	public void Exit() {
+		Application.Quit();
+	}
+	
+	private void _GoMenu() {
+		m_state = GameState.Menu;
+		_ToggleUI();
+		
+		m_player.Despawn();
+	}
+	
+	private void _GoResults() {
+		m_state = GameState.Results;
+		_ToggleUI();
+		
+		var alive = 0;
+		foreach( var pengu in m_player.Iceberg.Penguins ) {
+			if( pengu.IsAlive ) {
+				alive += 1;
+			}
+		}
+		m_resultText.text = "Penguins saved: "+alive+"\nMonsters killed: "+m_player.Kills;
+		
+		StartCoroutine( _ReturnToMenuRoutine() );
+	}
+	
+	private IEnumerator _ReturnToMenuRoutine() {
+		yield return new WaitForSeconds( 5 );
+		_GoMenu();
 	}
 #endregion
 	
 	
 #region Public
 	public void StartGame() {
+		m_player.transform.SetParent( null );
+		
 		if( m_playerIceberg != null ) {
 			m_playerIceberg.Mesh.AbortMeshWriting();
-			Destroy( m_playerIceberg );
+			Destroy( m_playerIceberg.gameObject );
 		}
 		
 		m_playerIceberg = IceGenerator.Generate( m_iceIterations );
@@ -88,6 +146,9 @@ public class Game : MonoSingular<Game> {
 		yield return new WaitForSeconds( 0.3f );
 		m_gameStartTime = Time.time;
 		m_state = GameState.InGame;
+		_ToggleUI();
+		
+		m_player.Spawn();
 		
 		var penguinsCount = Random.Range( m_populationSize.x, m_populationSize.y );
 		Extensions.TimeLog( "Settled on "+penguinsCount+" penguins" );
@@ -127,14 +188,20 @@ public class Game : MonoSingular<Game> {
 	}
 	
 	private void _RunGameLogic() {
+		m_gameProgressRoot.value = _progress;
+		
+		if( _progress >= 0.98f ) {
+			_GoResults();
+		}
+		
 		var monstersAlive = 0;
 		foreach( var monster in m_playerIceberg.Monsters ) {
-			if( monster.IsAlive ) {
-				monstersAlive += 1;
+			if( monster.AliveAndActive ) {
+				// monstersAlive += 1;
 			}
 		}
 		
-		if( monstersAlive > 0 ) {
+		if( monstersAlive > 15 ) {
 			return;
 		}
 		
@@ -150,7 +217,7 @@ public class Game : MonoSingular<Game> {
 		}
 		monstersToSpawn *= m_debugMonstersScaler;
 		
-		// Extensions.TimeLogError( "Going to spawn "+monstersToSpawn+" monsters!" );
+		Extensions.TimeLogError( "Going to spawn "+monstersToSpawn+" monsters!" );
 		
 		for( var i = 0; i < monstersToSpawn; i++ ) {
 			m_playerIceberg.SpawnMonster();

@@ -34,6 +34,7 @@ public abstract class CreatureBase : IcebergEntity {
 	
 	public bool IsAlive { get; private set; }
 	public Vector3 MoveDirection { get { return m_moveDirection; } }
+	public Iceberg Iceberg { get { return m_iceberg; } }
 	
 #region Implementation
 	void Awake() {

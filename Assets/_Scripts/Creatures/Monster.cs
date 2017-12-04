@@ -17,6 +17,10 @@ public class Monster : AICreature {
 		get { return (1 << 8) + (1 << 4); }	// Note: because Monster can swim can actually walk on monsters
 	}
 	
+	public bool AliveAndActive {
+		get { return IsAlive && m_state == State.Hungry; }
+	}
+	
 #region Implementation
 #endregion
 	

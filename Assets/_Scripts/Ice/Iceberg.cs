@@ -29,6 +29,19 @@ public class Iceberg : MonoBehaviour {
 			_ProcessDrift();
 		}
 	}
+	
+	void OnDestroy() {
+		var copy = new List<IcebergEntity>( m_entities );
+		foreach( var x in copy ) {
+			if( x != Player ) {
+				Destroy( x );
+			}
+		}
+		m_entities.Clear();
+		m_penguins.Clear();
+		m_monsters.Clear();
+		Player = null;
+	}
 #endregion
 	
 	
@@ -91,6 +104,8 @@ public class Iceberg : MonoBehaviour {
 		var monster = _SpawnMonster( position );
 		AddEntity( monster );
 	}
+	
+	
 	
 	public void Split( Vector3 position, Vector3 direction ) {
 		Mesh.UnSkirt( IceGenerator.Skirt );

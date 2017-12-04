@@ -15,17 +15,28 @@ public class Player : CreatureBase {
 	[SerializeField] private AttackIndicator m_attackUI;
 	[SerializeField] private SliceIndicator m_splitUI;
 	
+	[SerializeField] private AudioSource m_source;
+	[SerializeField] private AudioClip[] m_splitSounds;
+	[SerializeField] private AudioClip[] m_attackSounds;
+	
 	private State m_state;
 	private float m_stateTimer;
 	private bool m_canSplit = true;
 	private Monster m_target;
+	private bool m_spawned = false;
 	
 	protected override int _layerMask {
 		get { return (1 << 8) + (1 << 9); }	// Note: because Player can actually walk on monsters
 	}
 	
+	public int Kills;
+	
 #region Implementation
 	void Update() {
+		if( !m_spawned ) {
+			return;
+		}
+		
 		_ProcessKeys();
 		_ProcessMovement();
 		
@@ -52,15 +63,21 @@ public class Player : CreatureBase {
 		else if( m_state == State.ChargingSplit ) {
 			m_splitUI.gameObject.SetActive( m_canSplit );
 		}
-		
-		if( Input.GetKeyDown( KeyCode.K ) ) {
-			Extensions.TimeLogError( "Max push: "+s_maxPushout );
-		}
 	}
 #endregion
 	
 	
 #region Public
+	public void Spawn() {
+		m_spawned = true;
+		Kills = 0;
+		
+		transform.position = Vector3.up *5;
+	}
+	
+	public void Despawn() {
+		m_spawned = false;
+	}
 #endregion
 	
 	
@@ -119,12 +136,18 @@ public class Player : CreatureBase {
 	private void _OnAttackLanding() {
 		if( m_target != null ) {
 			m_target.GetKilled();
+			Kills += 1;
 		}
+		
+		var clip = m_attackSounds[Random.Range( 0, m_attackSounds.Length )];
+		m_source.PlayOneShot( clip );
 		CameraShake.MakeAShake( false );
 	}
 	
 	private void _OnSplitLanding() {
 		// TODO: play animation!
+		var clip = m_splitSounds[Random.Range( 0, m_splitSounds.Length )];
+		m_source.PlayOneShot( clip );
 		
 		CameraShake.MakeAShake( true );
 		
@@ -194,7 +217,11 @@ public class Player : CreatureBase {
 		var plane = new Plane( Vector3.up, transform.position );
 		var ray = Camera.main.ScreenPointToRay( Input.mousePosition );
 		point = plane.Cast( ray );
-		direction = (point - transform.position).normalized.XZ().X0Y() *m_splitReach;
+		var diff = point - transform.position;
+		direction = (diff).normalized.XZ().X0Y();
+		
+		var newMag = Mathf.Clamp( direction.magnitude, 0.5f, m_splitReach );
+		direction = direction.normalized *newMag;
 		point = transform.position + direction;
 	}
 #endregion
