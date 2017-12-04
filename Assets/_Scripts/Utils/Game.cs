@@ -150,7 +150,7 @@ public class Game : MonoSingular<Game> {
 		}
 		monstersToSpawn *= m_debugMonstersScaler;
 		
-		Extensions.TimeLogError( "Going to spawn "+monstersToSpawn+" monsters!" );
+		// Extensions.TimeLogError( "Going to spawn "+monstersToSpawn+" monsters!" );
 		
 		for( var i = 0; i < monstersToSpawn; i++ ) {
 			m_playerIceberg.SpawnMonster();

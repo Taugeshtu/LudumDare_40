@@ -74,7 +74,7 @@ public class Iceberg : MonoBehaviour {
 		var sanityCheck = count *20;
 		while( m_penguins.Count < count ) {
 			// TODO: proper position!
-			var point = Random.insideUnitCircle.X0Y() *20;
+			var point = RandomOnIce();
 			var newPengu = _SpawnPenguin( point );
 			
 			AddEntity( newPengu );
@@ -104,7 +104,7 @@ public class Iceberg : MonoBehaviour {
 		var pivotPosition = position + direction.normalized *IceGenerator.GenRadius *0.2f;
 		var drift = direction.normalized *m_maxSpeed;
 		
-		var newIceberg = IceGenerator.Generate( pivotPosition, drifters );
+		var newIceberg = IceGenerator.GenerateSplit( pivotPosition, drifters );
 		newIceberg.SetAdrift( drift, Random.Range( -5f, 5f ) );
 		
 		var shift = Vector3.Project( position, direction );
@@ -131,30 +131,40 @@ public class Iceberg : MonoBehaviour {
 		m_driftStartTime = Time.time + m_driftDelay;
 		m_turnSpeed = turnSpeed;
 	}
+	
+	public Vector3 RandomOnIce() {
+		var result = Vector3.up *5;
+		var gotIt = false;
+		var sanity = 100;
+		while( !gotIt ) {
+			var point = Random.insideUnitCircle.X0Y() *Mesh.ActualMesh.bounds.extents.magnitude;
+			var ray = new Ray( point + Vector3.up *20, Vector3.down );
+			RaycastHit hit;
+			var mask = (1 << 8);
+			
+			if( Physics.Raycast( ray, out hit, 50f, mask ) ) {
+				if( hit.collider == Mesh.Collider ) {
+					result = hit.point;
+				}
+			}
+			
+			sanity -= 1;
+			if( sanity <= 0 ) { gotIt = true; }
+		}
+		
+		return result;
+	}
 #endregion
 	
 	
 #region Private
 	private Penguin _SpawnPenguin( Vector3 position ) {
-		var ray = new Ray( position + Vector3.up *20, Vector3.down );
-		RaycastHit hit;
-		var mask = (1 << 8);
-		
-		if( Physics.Raycast( ray, out hit, 50f, mask ) ) {
-			if( hit.collider != Mesh.Collider ) {
-				return null;
-			}
-			
-			var pengu = Instantiate( Game.PenguinPrefab );
-			pengu.gameObject.SetActive( true );
-			// pengu.transform.SetParent( transform );
-			pengu.transform.rotation = Quaternion.AngleAxis( Random.value *360f, Vector3.up );
-			pengu.transform.position = hit.point + Vector3.up *Random.Range( 1f, 3f );
-			return pengu;
-		}
-		else {
-			return null;
-		}
+		var pengu = Instantiate( Game.PenguinPrefab );
+		pengu.gameObject.SetActive( true );
+		// pengu.transform.SetParent( transform );
+		pengu.transform.rotation = Quaternion.AngleAxis( Random.value *360f, Vector3.up );
+		pengu.transform.position = position + Vector3.up *Random.Range( 1f, 3f );
+		return pengu;
 	}
 	
 	private Vector3 _GetPositionForMonster() {

@@ -45,9 +45,12 @@ public class Player : CreatureBase {
 				m_attackUI.Position( point, direction );
 			}
 			else {
-				m_splitUI.gameObject.SetActive( true );
+				m_splitUI.gameObject.SetActive( m_canSplit );
 				m_splitUI.Position( point, direction );
 			}
+		}
+		else if( m_state == State.ChargingSplit ) {
+			m_splitUI.gameObject.SetActive( m_canSplit );
 		}
 	}
 #endregion
@@ -69,7 +72,7 @@ public class Player : CreatureBase {
 		}
 		
 		if( m_state == State.Walking ) {
-			if( splitKeyPressed ) {
+			if( splitKeyPressed && m_canSplit ) {
 				m_state = State.ChargingSplit;
 				m_stateTimer = Time.time + TimingManager.ChargeTime;
 			}
@@ -133,14 +136,16 @@ public class Player : CreatureBase {
 	private void _ProcessMovement() {
 		var xAxis = Input.GetAxis( "Horizontal" );
 		var yAxis = Input.GetAxis( "Vertical" );
-		m_moveDirection = (new Vector2( xAxis, yAxis )).X0Y();
-		if( m_moveDirection.magnitude > 1f ) {
-			m_moveDirection = m_moveDirection.normalized;
+		var moveDirection = (new Vector2( xAxis, yAxis )).X0Y();
+		if( moveDirection.magnitude > 1f ) {
+			moveDirection = moveDirection.normalized;
 		}
 		
 		if( m_state != State.Walking ) {
-			m_moveDirection = Vector3.zero;
+			moveDirection = Vector3.zero;
 		}
+		
+		_SetMoveDirection( moveDirection );
 	}
 	
 	private Monster _SeekTarget() {

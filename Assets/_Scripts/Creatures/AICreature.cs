@@ -6,8 +6,6 @@ public class AICreature : CreatureBase {
 	
 	private float m_nextDecitionTime;
 	
-	protected Vector3 m_motionTarget;
-	
 #region Implementation
 	void Update() {
 		_Idle();

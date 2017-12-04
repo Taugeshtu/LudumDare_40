@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;
 using MathMeshes;
 
@@ -35,7 +36,7 @@ public class IceGenerator : MonoSingular<IceGenerator> {
 	
 	
 #region Public
-	public static Iceberg Generate( Vector3 pivotPosition, List<Triangle<SimpleVertex>> triangles ) {
+	public static Iceberg GenerateSplit( Vector3 pivotPosition, List<Triangle<SimpleVertex>> triangles ) {
 		var iceberg = _PrepareIceberg( pivotPosition );
 		
 		// Note: dirty hacking here!
@@ -47,6 +48,8 @@ public class IceGenerator : MonoSingular<IceGenerator> {
 		iceberg.Mesh.MakeVerticesUnique();
 		
 		iceberg.Mesh.WriteToMesh();
+		
+		s_Instance.StartCoroutine( s_Instance._KillerRoutine( iceberg ) );
 		return iceberg;
 	}
 	
@@ -93,9 +96,9 @@ public class IceGenerator : MonoSingular<IceGenerator> {
 		return iceberg;
 	}
 	
-	private void _GenIteration( IcebergMesh mesh ) {
-		mesh.SpawnTriangle( m_genRadius, m_stitchRadius );
-		mesh.WriteToMesh();
+	private IEnumerator _KillerRoutine( Iceberg iceberg ) {
+		yield return new WaitForSeconds( 30 );
+		Destroy( iceberg );
 	}
 #endregion
 	

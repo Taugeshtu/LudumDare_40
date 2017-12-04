@@ -18,7 +18,7 @@ public abstract class CreatureBase : IcebergEntity {
 	
 	private Queue<Vector2> m_positionsHistory = new Queue<Vector2>();
 	private bool m_isInContact;
-	protected Vector3 m_moveDirection;
+	private Vector3 m_moveDirection;
 	
 	private Rigidbody m_rigid;
 	protected Rigidbody _rigidbody {
@@ -33,6 +33,7 @@ public abstract class CreatureBase : IcebergEntity {
 	}
 	
 	public bool IsAlive { get; private set; }
+	public Vector3 MoveDirection { get { return m_moveDirection; } }
 	
 #region Implementation
 	void Awake() {
@@ -61,7 +62,7 @@ public abstract class CreatureBase : IcebergEntity {
 	public virtual void GetKilled() {
 		IsAlive = false;
 		// TODO: particle explosion!
-		
+		Extensions.TimeLogError( "Killed" );
 	}
 #endregion
 	
@@ -78,15 +79,21 @@ public abstract class CreatureBase : IcebergEntity {
 			factor *= Physics.gravity.magnitude;
 			
 			var pushout = transform.up *factor;
-			if( !IsAlive ) { pushout *= 0f; }
-			
 			var vertical = Vector3.Project( _rigidbody.velocity, Vector3.up );
+			
+			if( !IsAlive ) {
+				pushout = Vector3.zero;
+				vertical = Vector3.zero;
+			}
+			
 			_rigidbody.AddForce( -vertical, ForceMode.VelocityChange );
 			_rigidbody.AddForce( pushout, ForceMode.Acceleration );
 			m_isInContact = true;
 		}
 		else {
-			_rigidbody.AddForce( Physics.gravity, ForceMode.Acceleration );
+			if( IsAlive ) {
+				_rigidbody.AddForce( Physics.gravity, ForceMode.Acceleration );
+			}
 		}
 	}
 	
@@ -135,6 +142,10 @@ public abstract class CreatureBase : IcebergEntity {
 			m_moveDirection = Vector3.zero;
 		}
 		_ReachNewVelocity( m_moveDirection );
+	}
+	
+	protected void _SetMoveDirection( Vector3 direction ) {
+		m_moveDirection = direction;
 	}
 #endregion
 	
