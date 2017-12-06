@@ -21,6 +21,8 @@ public class Player : CreatureBase {
 	
 	[SerializeField] private Skeletool m_skeletool;
 	[SerializeField] private AnimationCurve m_curve;
+	[SerializeField] private AnimationCurve m_splitCurve;
+	[SerializeField] private AnimationCurve m_splitCurve2;
 	
 	private State m_state;
 	private float m_stateTimer;
@@ -99,7 +101,7 @@ public class Player : CreatureBase {
 			if( splitKeyPressed && m_canSplit ) {
 				m_state = State.ChargingSplit;
 				m_stateTimer = Time.time + TimingManager.ChargeTime;
-				m_skeletool.Enqueue( "Split1", m_curve, TimingManager.ChargeTime );
+				m_skeletool.Enqueue( "Split1", m_splitCurve, TimingManager.ChargeTime );
 			}
 			
 			if( attackKeyPressed ) {
@@ -155,7 +157,8 @@ public class Player : CreatureBase {
 		
 		CameraShake.MakeAShake( true );
 		
-		m_skeletool.Enqueue( "Split2", m_curve, TimingManager.SplitTime );
+		m_skeletool.Enqueue( "Split2", m_curve, TimingManager.SplitTime /2 );
+		m_skeletool.GoIdle( m_splitCurve2, TimingManager.SplitTime /2 );
 		
 		var point = Vector3.zero;
 		var direction = Vector3.zero;

@@ -49,6 +49,8 @@ public class Game : MonoSingular<Game> {
 	
 	private float m_currentValue;
 	
+	private int m_penguinsSpawned;
+	
 	private float _timeRunning { get { return (Time.time - m_gameStartTime); } }
 	private float _progress { get { return _timeRunning/m_majorPaceLoop; } }
 	
@@ -109,7 +111,8 @@ public class Game : MonoSingular<Game> {
 				alive += 1;
 			}
 		}
-		m_resultText.text = "Penguins saved: "+alive+"\nMonsters killed: "+m_player.Kills;
+		m_resultText.text = "Penguins saved: "+alive+"/"+m_penguinsSpawned
+		+"\nMonsters killed: "+m_player.Kills;
 		
 		StartCoroutine( _ReturnToMenuRoutine() );
 	}
@@ -150,11 +153,12 @@ public class Game : MonoSingular<Game> {
 		
 		m_player.Spawn();
 		
-		var penguinsCount = Random.Range( m_populationSize.x, m_populationSize.y );
-		Extensions.TimeLog( "Settled on "+penguinsCount+" penguins" );
-		for( var i = 0; i < penguinsCount; i++ ) {
-			m_playerIceberg.SpawnPenguins( penguinsCount );
-			yield return new WaitForSeconds( 0.05f);
+		m_penguinsSpawned = Random.Range( m_populationSize.x, m_populationSize.y );
+		Extensions.TimeLog( "Settled on "+m_penguinsSpawned+" penguins" );
+		for( var i = 0; i < m_penguinsSpawned; i++ ) {
+			m_playerIceberg.SpawnPenguins( 1 );
+			yield return new WaitForEndOfFrame();
+			yield return new WaitForEndOfFrame();
 		}
 	}
 	
@@ -197,11 +201,11 @@ public class Game : MonoSingular<Game> {
 		var monstersAlive = 0;
 		foreach( var monster in m_playerIceberg.Monsters ) {
 			if( monster.AliveAndActive ) {
-				// monstersAlive += 1;
+				monstersAlive += 1;
 			}
 		}
 		
-		if( monstersAlive > 15 ) {
+		if( monstersAlive > 5 ) {
 			return;
 		}
 		
@@ -217,7 +221,9 @@ public class Game : MonoSingular<Game> {
 		}
 		monstersToSpawn *= m_debugMonstersScaler;
 		
-		Extensions.TimeLogError( "Going to spawn "+monstersToSpawn+" monsters!" );
+		if( monstersToSpawn > 0 ) {
+			Extensions.TimeLogError( "Going to spawn "+monstersToSpawn+" monsters!" );
+		}
 		
 		for( var i = 0; i < monstersToSpawn; i++ ) {
 			m_playerIceberg.SpawnMonster();

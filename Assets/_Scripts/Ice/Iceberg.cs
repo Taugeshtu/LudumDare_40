@@ -82,15 +82,15 @@ public class Iceberg : MonoBehaviour {
 	}
 	
 	public void SpawnPenguins( int count ) {
-		// TODO: find centroids!
-		
 		var sanityCheck = count *20;
-		while( m_penguins.Count < count ) {
+		var spawnedCount = 0;
+		while( spawnedCount < count ) {
 			// TODO: proper position!
 			var point = RandomOnIce();
 			var newPengu = _SpawnPenguin( point );
 			
 			AddEntity( newPengu );
+			spawnedCount += 1;
 			
 			sanityCheck -= 1;
 			if( sanityCheck <= 0 ) {

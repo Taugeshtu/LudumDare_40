@@ -7,6 +7,9 @@ public class Monster : AICreature {
 		Fed
 	}
 	
+	private static int s_hungerMin = 3;
+	private static int s_hungerMax = 6;
+	
 	private Penguin m_target;
 	private int m_cycles;
 	private int m_hunger;
@@ -33,8 +36,7 @@ public class Monster : AICreature {
 	protected override void _Ignite() {
 		base._Ignite();
 		
-		m_hunger = Random.Range( 1, 4 );
-		m_hunger = 1;
+		m_hunger = Random.Range( s_hungerMin, s_hungerMax );
 		
 		m_state = State.Hungry;
 	}

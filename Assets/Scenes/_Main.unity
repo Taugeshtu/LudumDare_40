@@ -519,7 +519,7 @@ MeshRenderer:
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
   m_Materials:
-  - {fileID: 2100000, guid: 084f729dbf5392244b5d10d4f3a81719, type: 2}
+  - {fileID: 2100000, guid: 774a9e1b330eea34bb3355c1fd9af83f, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -4772,18 +4772,66 @@ MonoBehaviour:
     - serializedVersion: 2
       time: 0.43507713
       value: 1.0888896
-      inSlope: 0
-      outSlope: 0
+      inSlope: -1.0358357
+      outSlope: -1.0358357
       tangentMode: 0
     - serializedVersion: 2
-      time: 0.7906825
-      value: 0.03664425
+      time: 0.67252564
+      value: 0.95889986
+      inSlope: -0.63381624
+      outSlope: -0.63381624
+      tangentMode: 0
+    - serializedVersion: 2
+      time: 0.87640995
+      value: 0.16407722
       inSlope: -2.5570393
       outSlope: -2.5570393
       tangentMode: 0
     - serializedVersion: 2
       time: 1
       value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 0
+  m_splitCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 2
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+    - serializedVersion: 2
+      time: 0.20959896
+      value: -0.11072278
+      inSlope: 0.17935912
+      outSlope: 0.17935912
+      tangentMode: 0
+    - serializedVersion: 2
+      time: 1
+      value: 1
+      inSlope: 1.7784013
+      outSlope: 1.7784013
+      tangentMode: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 0
+  m_splitCurve2:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 2
+      time: 0
+      value: 0
+      inSlope: 2
+      outSlope: 2
+      tangentMode: 0
+    - serializedVersion: 2
+      time: 1
+      value: 1
       inSlope: 0
       outSlope: 0
       tangentMode: 0
@@ -6072,8 +6120,8 @@ MonoBehaviour:
   m_player: {fileID: 1104547649}
   m_penguinPrefab: {fileID: 1830831777}
   m_populationSize:
-    x: 15
-    y: 30
+    x: 20
+    y: 35
   m_monsterPrefab: {fileID: 1614519015}
   m_majorPaceLoop: 120
   m_majorAmplitude: 3
@@ -6338,7 +6386,7 @@ MeshRenderer:
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
   m_Materials:
-  - {fileID: 2100000, guid: 084f729dbf5392244b5d10d4f3a81719, type: 2}
+  - {fileID: 2100000, guid: 821306b66517f1b498969c28deedde43, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
