@@ -16,6 +16,7 @@ public class Game : MonoSingular<Game> {
 	[SerializeField] private int m_seed;
 	[SerializeField] private int m_iceIterations = 40;
 	[SerializeField] private Player m_player;
+	[SerializeField] private bool m_startWithMenu;
 	
 	[Header( "Penguins" )]
 	[SerializeField] private Penguin m_penguinPrefab;
@@ -75,7 +76,12 @@ public class Game : MonoSingular<Game> {
 		// StartGame();
 		// _DebugPace();
 		
-		_GoMenu();
+		if( m_startWithMenu ) {
+			_GoMenu();
+		}
+		else {
+			StartGame();
+		}
 	}
 	
 	void Update() {

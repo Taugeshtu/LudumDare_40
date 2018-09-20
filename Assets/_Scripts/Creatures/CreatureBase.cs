@@ -8,7 +8,6 @@ public abstract class CreatureBase : IcebergEntity {
 	[SerializeField] protected float m_deacceleration = 0.9f;
 	
 	[Header( "Physics" )]
-	[SerializeField] private ValueCurve m_pushoutScale;
 	[SerializeField] private float m_castRadius = 0.2f;
 	[SerializeField] private float m_castDepth = 1f;
 	
@@ -68,21 +67,30 @@ public abstract class CreatureBase : IcebergEntity {
 #endregion
 	
 	
-	protected static float s_maxPushout;
 #region Private
 	private void _Pushout() {
 		m_isInContact = false;
+		m_shouldDraw = true;
+		
 		RaycastHit hit;
 		var ray = new Ray( transform.position + transform.up *m_castDepth, -transform.up );
 		if( Caster.SphereCast( ray, m_castRadius, out hit, m_castDepth, _layerMask, m_shouldDraw ) ) {
-			var factor = Mathf.InverseLerp( m_castDepth, 0f, hit.distance );
-			
-			factor = m_pushoutScale.Evaluate( factor );
-			factor *= Physics.gravity.magnitude;
-			
-			var pushout = transform.up *factor;
 			var vertical = Vector3.Project( _rigidbody.velocity, Vector3.up );
+			_rigidbody.AddForce( -vertical, ForceMode.VelocityChange );
+			transform.position = transform.position.WithY( hit.point.y );
 			
+			/*
+			var vertical = Vector3.Project( _rigidbody.velocity, Vector3.up );
+			vertical += Physics.gravity *Time.fixedDeltaTime;
+			
+			var idealPosition = hit.point;
+			var diff = (transform.position + vertical) - idealPosition;
+			diff = Vector3.Project( diff, Vector3.up );
+			
+			_rigidbody.AddForce( -diff, ForceMode.VelocityChange );
+			*/
+			
+			/*
 			if( !IsAlive ) {
 				pushout = Vector3.zero;
 				vertical = Vector3.zero;
@@ -92,6 +100,7 @@ public abstract class CreatureBase : IcebergEntity {
 			
 			_rigidbody.AddForce( -vertical, ForceMode.VelocityChange );
 			_rigidbody.AddForce( pushout, ForceMode.Acceleration );
+			*/
 			m_isInContact = true;
 		}
 		else {
