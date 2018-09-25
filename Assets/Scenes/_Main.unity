@@ -4730,15 +4730,8 @@ MonoBehaviour:
   m_speed: 8
   m_acceleration: 0.6
   m_deacceleration: 0.9
-  m_pushoutScale:
-    m_timeScale: 1
-    m_valueScale: 1
-    m_points:
-    - {x: 0, y: 0}
-    - {x: 0.1, y: 5}
-    - {x: 1, y: 10}
   m_castRadius: 0.2
-  m_castDepth: 0.5
+  m_castDepth: 3
   m_shouldDraw: 1
   m_historyDepth: 35
   m_splitReach: 1.8
@@ -6118,6 +6111,7 @@ MonoBehaviour:
   m_seed: -1
   m_iceIterations: 18
   m_player: {fileID: 1104547649}
+  m_startWithMenu: 0
   m_penguinPrefab: {fileID: 1830831777}
   m_populationSize:
     x: 20
@@ -6444,15 +6438,8 @@ MonoBehaviour:
   m_speed: 5
   m_acceleration: 0.7
   m_deacceleration: 0.9
-  m_pushoutScale:
-    m_timeScale: 1
-    m_valueScale: 1
-    m_points:
-    - {x: 0, y: 0}
-    - {x: 0.1, y: 5}
-    - {x: 1, y: 10}
   m_castRadius: 0.3
-  m_castDepth: 0.7
+  m_castDepth: 3
   m_shouldDraw: 0
   m_historyDepth: 35
 --- !u!4 &1614519016
@@ -7003,15 +6990,8 @@ MonoBehaviour:
   m_speed: 3
   m_acceleration: 0.5
   m_deacceleration: 0.9
-  m_pushoutScale:
-    m_timeScale: 1
-    m_valueScale: 1
-    m_points:
-    - {x: 0, y: 0}
-    - {x: 0.1, y: 10}
-    - {x: 1, y: 20}
   m_castRadius: 0.2
-  m_castDepth: 0.7
+  m_castDepth: 3
   m_shouldDraw: 0
   m_historyDepth: 10
   Value: 1
