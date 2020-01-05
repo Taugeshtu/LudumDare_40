@@ -1,6 +1,5 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
-using MathMeshes;
 
 public class Iceberg : MonoBehaviour {
 	public IcebergMesh Mesh { get; private set; }
@@ -52,7 +51,7 @@ public class Iceberg : MonoBehaviour {
 	
 	public void AddEntity( IcebergEntity entity ) {
 		if( entity == null ) {
-			Extensions.TimeLogWarning( "This shouldn't happen. Trying to add null entity to Iceberg!", gameObject );
+			Debug.LogWarning( "This shouldn't happen. Trying to add null entity to Iceberg!", gameObject );
 			return;
 		}
 		
@@ -68,7 +67,7 @@ public class Iceberg : MonoBehaviour {
 	
 	public void TransferEntity( IcebergEntity entity, Iceberg target ) {
 		if( entity == null ) {
-			Extensions.TimeLogWarning( "This shouldn't happen. Trying to add null entity to Iceberg!", gameObject );
+			Debug.LogWarning( "This shouldn't happen. Trying to add null entity to Iceberg!", gameObject );
 			return;
 		}
 		

@@ -1,9 +1,13 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-using MathMeshes;
+
+using Clutter;
+using Clutter.Mesh;
 
 public class IceGenerator : MonoSingular<IceGenerator> {
+	protected override BehaviourSettings Behaviour { get { return new BehaviourSettings( false, true, true ); } }
+	
 	[SerializeField] private Material m_material;
 	[SerializeField] private float m_genRadius = 3f;
 	[SerializeField] private float m_stitchRadius = 5f;
@@ -36,7 +40,7 @@ public class IceGenerator : MonoSingular<IceGenerator> {
 	
 	
 #region Public
-	public static Iceberg GenerateSplit( Vector3 pivotPosition, List<Triangle<SimpleVertex>> triangles ) {
+	public static Iceberg GenerateSplit( Vector3 pivotPosition, List<Triangle> triangles ) {
 		var iceberg = _PrepareIceberg( pivotPosition );
 		
 		// Note: dirty hacking here!

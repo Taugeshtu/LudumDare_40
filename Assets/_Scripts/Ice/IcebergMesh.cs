@@ -1,8 +1,9 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
-using MathMeshes;
 
-public class IcebergMesh : BigMesh<SimpleVertex> {
+using Clutter.Mesh;
+
+public class IcebergMesh : MorphMesh {
 	private List<Edge<SimpleVertex>> m_outerEdges = new List<Edge<SimpleVertex>>();
 	
 	public bool ShouldDraw = false;

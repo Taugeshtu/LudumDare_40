@@ -3,7 +3,11 @@ using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
 
+using Clutter;
+
 public class Game : MonoSingular<Game> {
+	protected override BehaviourSettings Behaviour { get { return new BehaviourSettings( false, true, true ); } }
+	
 	private enum GameState {
 		NotReady,
 		Menu,
@@ -20,7 +24,7 @@ public class Game : MonoSingular<Game> {
 	
 	[Header( "Penguins" )]
 	[SerializeField] private Penguin m_penguinPrefab;
-	[SerializeField] private Vector2i m_populationSize;
+	[SerializeField] private Vector2Int m_populationSize;
 	
 	[Header( "Monsters" )]
 	[SerializeField] private Monster m_monsterPrefab;
@@ -160,7 +164,7 @@ public class Game : MonoSingular<Game> {
 		m_player.Spawn();
 		
 		m_penguinsSpawned = Random.Range( m_populationSize.x, m_populationSize.y );
-		Extensions.TimeLog( "Settled on "+m_penguinsSpawned+" penguins" );
+		Debug.Log( "Settled on "+m_penguinsSpawned+" penguins" );
 		for( var i = 0; i < m_penguinsSpawned; i++ ) {
 			m_playerIceberg.SpawnPenguins( 1 );
 			yield return new WaitForEndOfFrame();
@@ -228,7 +232,7 @@ public class Game : MonoSingular<Game> {
 		monstersToSpawn *= m_debugMonstersScaler;
 		
 		if( monstersToSpawn > 0 ) {
-			Extensions.TimeLogError( "Going to spawn "+monstersToSpawn+" monsters!" );
+			Debug.LogError( "Going to spawn "+monstersToSpawn+" monsters!" );
 		}
 		
 		for( var i = 0; i < monstersToSpawn; i++ ) {

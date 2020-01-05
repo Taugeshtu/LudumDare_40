@@ -62,7 +62,7 @@ public abstract class CreatureBase : IcebergEntity {
 	public virtual void GetKilled() {
 		IsAlive = false;
 		// TODO: particle explosion!
-		// Extensions.TimeLogError( "Killed" );
+		// Debug.LogError( "Killed" );
 	}
 #endregion
 	

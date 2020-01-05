@@ -1,9 +1,13 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 
+using Clutter;
+
 public class CameraShake : MonoSingular<CameraShake> {
-	[SerializeField] private Vector2i m_majorJumps;
-	[SerializeField] private Vector2i m_minorJumps;
+	protected override BehaviourSettings Behaviour { get { return new BehaviourSettings( false, true, true ); } }
+	
+	[SerializeField] private Vector2Int m_majorJumps;
+	[SerializeField] private Vector2Int m_minorJumps;
 	[SerializeField] private float m_majorAmp = 1.5f;
 	[SerializeField] private float m_minorAmp = 0.5f;
 	
