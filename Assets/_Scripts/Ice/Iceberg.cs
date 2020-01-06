@@ -113,7 +113,7 @@ public class Iceberg : MonoBehaviour {
 		Mesh.ReSkirt( IceGenerator.Skirt );
 		Mesh.MakeVerticesUnique();
 		
-		Mesh.WriteToMesh();
+		Mesh.Write();
 		
 		var pivotPosition = position + direction.normalized *IceGenerator.GenRadius *0.2f;
 		var drift = direction.normalized *m_maxSpeed;
@@ -151,7 +151,7 @@ public class Iceberg : MonoBehaviour {
 		var gotIt = false;
 		var sanity = 100;
 		while( !gotIt ) {
-			var point = Random.insideUnitCircle.X0Y() *Mesh.ActualMesh.bounds.extents.magnitude;
+			var point = Random.insideUnitCircle.X0Y() *Mesh.Target.mesh.bounds.extents.magnitude;
 			var ray = new Ray( point + Vector3.up *20, Vector3.down );
 			RaycastHit hit;
 			var mask = (1 << 8);
@@ -182,7 +182,7 @@ public class Iceberg : MonoBehaviour {
 	}
 	
 	private Vector3 _GetPositionForMonster() {
-		var bounds = Mesh.ActualMesh.bounds;
+		var bounds = Mesh.Target.mesh.bounds;
 		var point = Random.insideUnitCircle.normalized.X0Y();
 		point *= bounds.size.magnitude /2 + 0;
 		point += Vector3.up *Random.Range( 1f, 3f );

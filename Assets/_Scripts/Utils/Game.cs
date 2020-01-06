@@ -139,7 +139,6 @@ public class Game : MonoSingular<Game> {
 		m_player.transform.SetParent( null );
 		
 		if( m_playerIceberg != null ) {
-			m_playerIceberg.Mesh.AbortMeshWriting();
 			Destroy( m_playerIceberg.gameObject );
 		}
 		

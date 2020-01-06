@@ -51,7 +51,7 @@ public class IceGenerator : MonoSingular<IceGenerator> {
 		iceberg.Mesh.ReSkirt( Skirt );
 		iceberg.Mesh.MakeVerticesUnique();
 		
-		iceberg.Mesh.WriteToMesh();
+		iceberg.Mesh.Write();
 		
 		s_Instance.StartCoroutine( s_Instance._KillerRoutine( iceberg ) );
 		return iceberg;
@@ -67,7 +67,7 @@ public class IceGenerator : MonoSingular<IceGenerator> {
 		iceberg.Mesh.Coerce( Coercion.x, Coercion.y );
 		iceberg.Mesh.ReSkirt( Skirt );
 		iceberg.Mesh.MakeVerticesUnique();
-		iceberg.Mesh.WriteToMesh();
+		iceberg.Mesh.Write();
 		
 		return iceberg;
 	}
@@ -93,7 +93,7 @@ public class IceGenerator : MonoSingular<IceGenerator> {
 		collider.sharedMesh = mesh;
 		render.material = Material;
 		
-		var mathMesh = new IcebergMesh( filter, collider, false );
+		var mathMesh = new IcebergMesh( filter );
 		
 		var iceberg = pivotObject.AddComponent<Iceberg>();
 		iceberg.Ignite( mathMesh );

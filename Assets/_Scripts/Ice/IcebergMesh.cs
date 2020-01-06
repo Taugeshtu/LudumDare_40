@@ -8,7 +8,13 @@ public class IcebergMesh : MorphMesh {
 	
 	public bool ShouldDraw = false;
 	
+	public Collider Collider { get; private set; }
+	
 #region Implementation
+	public IcebergMesh( GameObject target ) : base( target ) {}
+	public IcebergMesh( Component target ) : base( target ) {
+		Collider = target.GetComponent<MeshCollider>();
+	}
 #endregion
 	
 	

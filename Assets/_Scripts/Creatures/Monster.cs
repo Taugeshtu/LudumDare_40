@@ -51,7 +51,7 @@ public class Monster : AICreature {
 				
 				if( m_hunger == 0 ) {
 					m_state = State.Fed;
-					m_targetPosition = Random.onUnitSphere.XZ().X0Y() *m_iceberg.Mesh.ActualMesh.bounds.size.magnitude *2;
+					m_targetPosition = Random.onUnitSphere.XZ().X0Y() *m_iceberg.Mesh.Target.mesh.bounds.size.magnitude *2;
 				}
 			}
 		}

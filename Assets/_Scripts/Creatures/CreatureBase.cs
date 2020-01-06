@@ -74,7 +74,7 @@ public abstract class CreatureBase : IcebergEntity {
 		
 		RaycastHit hit;
 		var ray = new Ray( transform.position + transform.up *m_castDepth, -transform.up );
-		if( Caster.SphereCast( ray, m_castRadius, out hit, m_castDepth, _layerMask, m_shouldDraw ) ) {
+		if( Physics.SphereCast( ray, m_castRadius, out hit, m_castDepth, _layerMask ) ) {
 			var vertical = Vector3.Project( _rigidbody.velocity, Vector3.up );
 			_rigidbody.AddForce( -vertical, ForceMode.VelocityChange );
 			transform.position = transform.position.WithY( hit.point.y );
