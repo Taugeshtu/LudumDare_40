@@ -64,6 +64,10 @@ public class Game : MonoSingular<Game> {
 	
 #region Implementation
 	private void _ToggleUI() {
+		if( (m_menuRoot == null) || (m_gameProgressRoot == null) || (m_resultsRoot == null) ) {
+			return;
+		}
+		
 		m_menuRoot.SetActive( m_state == GameState.Menu );
 		m_gameProgressRoot.gameObject.SetActive( m_state == GameState.InGame );
 		m_resultsRoot.SetActive( m_state == GameState.Results );
@@ -74,8 +78,12 @@ public class Game : MonoSingular<Game> {
 			Random.InitState( m_seed );
 		}
 		
-		m_penguinPrefab.gameObject.SetActive( false );
-		m_monsterPrefab.gameObject.SetActive( false );
+		if( m_penguinPrefab != null ) {
+			m_penguinPrefab.gameObject.SetActive( false );
+		}
+		if( m_monsterPrefab != null ) {
+			m_monsterPrefab.gameObject.SetActive( false );
+		}
 		
 		// StartGame();
 		// _DebugPace();
@@ -121,8 +129,10 @@ public class Game : MonoSingular<Game> {
 				alive += 1;
 			}
 		}
-		m_resultText.text = "Penguins saved: "+alive+"/"+m_penguinsSpawned
-		+"\nMonsters killed: "+m_player.Kills;
+		
+		if( m_resultText != null ) {
+			m_resultText.text = "Penguins saved: "+alive+"/"+m_penguinsSpawned+"\nMonsters killed: "+m_player.Kills;
+		}
 		
 		StartCoroutine( _ReturnToMenuRoutine() );
 	}
@@ -142,7 +152,7 @@ public class Game : MonoSingular<Game> {
 			Destroy( m_playerIceberg.gameObject );
 		}
 		
-		m_playerIceberg = IceGenerator.Generate( m_iceIterations );
+		m_playerIceberg = IceGenerator.GenerateNew( m_iceIterations );
 		if( m_player != null ) {
 			m_playerIceberg.AddEntity( m_player );
 		}
@@ -201,7 +211,9 @@ public class Game : MonoSingular<Game> {
 	}
 	
 	private void _RunGameLogic() {
-		m_gameProgressRoot.value = _progress;
+		if( m_gameProgressRoot != null ) {
+			m_gameProgressRoot.value = _progress;
+		}
 		
 		if( _progress >= 0.98f ) {
 			_GoResults();

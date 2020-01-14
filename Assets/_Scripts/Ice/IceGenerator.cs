@@ -40,64 +40,112 @@ public class IceGenerator : MonoSingular<IceGenerator> {
 	
 	
 #region Public
-	public static Iceberg GenerateSplit( Vector3 pivotPosition, List<Triangle> triangles ) {
-		var iceberg = _PrepareIceberg( pivotPosition );
-		
-		// Note: dirty hacking here!
-		iceberg.Mesh.RegisterTriangles( triangles );
-		iceberg.Mesh.UnSkirt( Skirt );
-		
-		iceberg.Mesh.WeldVertices();
-		iceberg.Mesh.ReSkirt( Skirt );
-		iceberg.Mesh.MakeVerticesUnique();
-		
-		iceberg.Mesh.Write();
-		
-		s_Instance.StartCoroutine( s_Instance._KillerRoutine( iceberg ) );
+	public static Iceberg GenerateNew( int iterations ) {
+		var iceberg = _SpawnIceberg( Vector3.zero );
+		var genDog = new WatchDog( "Ice generation" );
+		_FillIcebergMesh( iceberg.Mesh, iterations );
+		genDog.Stop();
 		return iceberg;
 	}
 	
-	public static Iceberg Generate( int iterations ) {
-		var iceberg = _PrepareIceberg( Vector3.zero );
-		
-		for( var i = 0; i < iterations; i++ ) {
-			iceberg.Mesh.SpawnTriangle( GenRadius, StitchRadius );
-		}
-		
-		iceberg.Mesh.Coerce( Coercion.x, Coercion.y );
-		iceberg.Mesh.ReSkirt( Skirt );
-		iceberg.Mesh.MakeVerticesUnique();
-		iceberg.Mesh.Write();
-		
+	public static Iceberg SpawnSplit( Vector3 pivotPosition ) {
+		var iceberg = _SpawnIceberg( pivotPosition );
+		s_Instance.StartCoroutine( s_Instance._KillerRoutine( iceberg ) );
 		return iceberg;
 	}
 #endregion
 	
 	
 #region Private
-	private static Iceberg _PrepareIceberg( Vector3 pivot ) {
+	private static Iceberg _SpawnIceberg( Vector3 pivot ) {
 		var pivotObject = new GameObject( "Iceberg" );
 		pivotObject.layer = 8;
 		pivotObject.transform.position = pivot;
 		
-		var meshObject = new GameObject( "Visuals" );
-		meshObject.layer = 8;
-		meshObject.transform.SetParent( pivotObject.transform, true );
-		
-		var filter = meshObject.AddComponent<MeshFilter>();
-		var collider = meshObject.AddComponent<MeshCollider>();
-		var render = meshObject.AddComponent<MeshRenderer>();
-		
-		var mesh = new Mesh();
-		filter.mesh = mesh;
-		collider.sharedMesh = mesh;
-		render.material = Material;
-		
-		var mathMesh = new IcebergMesh( filter );
+		var mainFilter = _SpawnMesh( "Visuals", pivotObject.transform );
+		var skirtFilter = _SpawnMesh( "skirt", mainFilter.transform );
+		var mesh = new IcebergMesh( mainFilter, skirtFilter, Skirt );
 		
 		var iceberg = pivotObject.AddComponent<Iceberg>();
-		iceberg.Ignite( mathMesh );
+		iceberg.Ignite( mesh );
 		return iceberg;
+	}
+	
+	private static MeshFilter _SpawnMesh( string name, Transform parent ) {
+		var meshObject = new GameObject( name );
+		meshObject.layer = 8;
+		meshObject.transform.SetParent( parent, true );
+		
+		var filter = meshObject.AddComponent<MeshFilter>();
+		filter.sharedMesh = new Mesh();
+		meshObject.AddComponent<MeshCollider>().sharedMesh = filter.sharedMesh;
+		meshObject.AddComponent<MeshRenderer>().material = Material;
+		
+		return filter;
+	}
+	
+	private static void _FillIcebergMesh( IcebergMesh mesh, int iceIterations ) {
+		// Setting up first tris:
+		var a = Vector3.forward *(Random.Range( 0.9f, 1.1f ) *GenRadius);
+		var b = Quaternion.AngleAxis( 120f, Vector3.up ) *Vector3.forward *(Random.Range( 0.9f, 1.1f ) *GenRadius);
+		var c = Quaternion.AngleAxis( 240f, Vector3.up ) *Vector3.forward *(Random.Range( 0.9f, 1.1f ) *GenRadius);
+		var firstTris = mesh.EmitTriangle( a, b, c );
+		
+		var selection = new Selection( mesh, firstTris );
+		for( var i = 0; i < iceIterations; i++ ) {
+			var outline = _Sequentialize( selection.OutlineEdges );
+			var edgeIndex = Random.Range( 0, outline.Count );
+			var edge = outline[edgeIndex];
+			var previous = outline.RoundRobin( edgeIndex - 1 );
+			var next = outline.RoundRobin( edgeIndex + 1 );
+			
+			var tris = _GrowFromEdge( mesh, edge, previous, next );
+			selection.Add( tris );
+		}
+		
+		mesh.Coerce( Coercion.x, Coercion.y );
+		mesh.Write();
+	}
+	
+	// Note: this is gonna fail if we have holes in our mesh!
+	private static List<Edge> _Sequentialize( IEnumerable<Edge> edges ) {
+		var work = new Queue<Edge>( edges );
+		var result = new List<Edge>( work.Count );
+		
+		var lastEdge = work.Dequeue();
+		result.Add( lastEdge );
+		while( work.Count > 0 ) {
+			var edge = work.Dequeue();
+			if( edge.A == lastEdge.B ) {
+				result.Add( edge );
+				lastEdge = edge;
+			}
+			else {
+				work.Enqueue( edge );
+			}
+		}
+		
+		return result;
+	}
+	
+	private static Triangle _GrowFromEdge( IcebergMesh mesh, Edge edge, Edge previous, Edge next ) {
+		var tangent = (Quaternion.AngleAxis( -90f, Vector3.up ) *edge.AB).normalized;
+		
+		// handling "degenerate" (non-convex) cases first
+		if( Vector3.Dot( edge.AB, previous.BA ) > 0 && Vector3.Dot( tangent, previous.BA ) > 0 ) {
+			return mesh.EmitTriangle( previous.A, edge.B, edge.A );
+		}
+		
+		if( Vector3.Dot( edge.AB, next.AB ) < 0 && Vector3.Dot( tangent, next.AB ) > 0 ) {
+			return mesh.EmitTriangle( edge.A, next.B, edge.B );
+		}
+		
+		var tangentScale = GenRadius *Random.Range( 0.8f, 2f );
+		var lateral = edge.AB *Random.value;
+		
+		var position = edge.A.Position + lateral + tangent *tangentScale;
+		var vertex = mesh.EmitVertex( position );
+		return mesh.EmitTriangle( edge.A, vertex, edge.B );
 	}
 	
 	private IEnumerator _KillerRoutine( Iceberg iceberg ) {

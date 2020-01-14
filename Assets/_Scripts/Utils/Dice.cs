@@ -15,7 +15,7 @@ public static class Dice {
 		return false;
 	}
 	
-	public static T Pick<T>( this IList<T> list ) {
+	public static T PickRandom<T>( this IList<T> list ) {
 		if( list.Count == 0 ) {
 			return default( T );
 		}
