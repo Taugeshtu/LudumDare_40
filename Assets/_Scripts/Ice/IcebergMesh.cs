@@ -109,7 +109,18 @@ public class IcebergMesh : MorphMesh {
 	}
 	
 	private void _RegenerateSkirt( bool bothSides = false ) {
+		var selection = new Selection( this, GetAllTriangles() );
 		
+		m_skirtMesh.Clear();
+		foreach( var edge in selection.OutlineEdges ) {
+			var a = m_skirtMesh.EmitVertex( edge.A.Position );
+			var b = m_skirtMesh.EmitVertex( edge.A.Position - m_skirtNormal );
+			var c = m_skirtMesh.EmitVertex( edge.B.Position - m_skirtNormal );
+			var d = m_skirtMesh.EmitVertex( edge.B.Position );
+			
+			m_skirtMesh.EmitTriangle( ref a, ref b, ref c );
+			m_skirtMesh.EmitTriangle( ref c, ref d, ref a );
+		}
 	}
 	
 	/*
