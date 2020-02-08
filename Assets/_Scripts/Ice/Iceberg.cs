@@ -108,14 +108,17 @@ public class Iceberg : MonoBehaviour {
 	
 	public void Split( Vector3 position, Vector3 direction ) {
 		var pivotPosition = position + direction.normalized *IceGenerator.GenRadius *0.2f;
-		var newIceberg = IceGenerator.SpawnSplit( pivotPosition );
 		
 		var drifters = Mesh.Split( position, direction );
+		var newIceberg = IceGenerator.SpawnSplit( pivotPosition );
+		
 		foreach( var tris in drifters ) {
-			newIceberg.Mesh.EmitTriangle( tris.A, tris.B, tris.C );
+			newIceberg.Mesh.EmitTriangle( tris.A.Position, tris.B.Position, tris.C.Position );
 			Mesh.DeleteTriangle( tris );
 		}
 		
+		Debug.Log( "Drifters: "+drifters.Dump() );
+		Debug.Log( newIceberg.Mesh.Dump() );
 		newIceberg.Mesh.Write();
 		Mesh.Write();
 		

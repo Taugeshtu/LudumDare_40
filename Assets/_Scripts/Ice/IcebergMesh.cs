@@ -41,7 +41,8 @@ public class IcebergMesh : MorphMesh {
 	}
 	
 	public Selection Split( Vector3 position, Vector3 direction ) {
-		var drifters = base.Slice( position, direction );
+		// Note: there lies the issue. With direct only we're bound by an unimplemented method in Selection.BreakApart()!
+		var drifters = base.Slice( position, direction, false );
 		// TODO: integrate logic with complex cracks here!
 		
 		return drifters;
