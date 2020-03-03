@@ -109,8 +109,30 @@ public class IcebergMesh : MorphMesh {
 		*/
 	}
 	
+	public void DrawSkirt() {
+		var arrowSize = 1f;
+		var allTris = GetAllTriangles( false );
+		var selection = new Selection( this, allTris );
+		
+		foreach( var edge in selection.OutlineEdges ) {
+			edge.Draw( Palette.orange, arrowSize, 5f );
+		}
+		
+		Debug.LogError( "Skirt debug, mesh: "+Dump() );
+		
+		var edgeDebs = "Edges: ";
+		foreach( var tris in allTris ) {
+			foreach( var edge in tris.Edges ) {
+				edgeDebs += "\n"+edge+" | owners: "+edge.OwnersCount;
+			}
+		}
+		Debug.Log( edgeDebs );
+	}
+	
 	private void _RegenerateSkirt( bool bothSides = false ) {
-		var selection = new Selection( this, GetAllTriangles() );
+		MergeVertices();
+		
+		var selection = new Selection( this, GetAllTriangles( false ) );
 		
 		m_skirtMesh.Clear();
 		foreach( var edge in selection.OutlineEdges ) {
@@ -122,6 +144,8 @@ public class IcebergMesh : MorphMesh {
 			m_skirtMesh.EmitTriangle( ref a, ref b, ref c );
 			m_skirtMesh.EmitTriangle( ref c, ref d, ref a );
 		}
+		
+		MakeVerticesUnique();
 	}
 	
 	/*

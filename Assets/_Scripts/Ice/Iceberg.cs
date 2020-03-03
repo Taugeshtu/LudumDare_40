@@ -110,20 +110,22 @@ public class Iceberg : MonoBehaviour {
 		var pivotPosition = position + direction.normalized *IceGenerator.GenRadius *0.2f;
 		
 		var drifters = Mesh.Split( position, direction );
-		var newIceberg = IceGenerator.SpawnSplit( pivotPosition );
+		// var newIceberg = IceGenerator.SpawnSplit( pivotPosition );
 		
 		foreach( var tris in drifters ) {
-			newIceberg.Mesh.EmitTriangle( tris.A.Position, tris.B.Position, tris.C.Position );
+			// newIceberg.Mesh.EmitTriangle( tris.A.Position, tris.B.Position, tris.C.Position );
 			Mesh.DeleteTriangle( tris );
 		}
 		
-		Debug.Log( "Drifters: "+drifters.Dump() );
-		Debug.Log( newIceberg.Mesh.Dump() );
-		newIceberg.Mesh.Write();
+		// Debug.Log( "Drifters: "+drifters.Dump() );
+		// Debug.Log( newIceberg.Mesh.Dump() );
+		// newIceberg.Mesh.Write();
 		Mesh.Write();
 		
+		Mesh.DrawSkirt();
+		
 		var drift = direction.normalized *m_maxSpeed;
-		newIceberg.SetAdrift( drift, Random.Range( -5f, 5f ) );
+		// newIceberg.SetAdrift( drift, Random.Range( -5f, 5f ) );
 		
 		var shift = Vector3.Project( position, direction );
 		var plane = new Plane( shift, -shift.magnitude );
@@ -140,7 +142,7 @@ public class Iceberg : MonoBehaviour {
 		}
 		
 		foreach( var entity in entitiesLeaving ) {
-			TransferEntity( entity, newIceberg );
+			// TransferEntity( entity, newIceberg );
 		}
 	}
 	
