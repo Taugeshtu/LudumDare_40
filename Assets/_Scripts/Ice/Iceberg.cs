@@ -29,6 +29,12 @@ public class Iceberg : MonoBehaviour {
 		}
 	}
 	
+	void OnDrawGizmos() {
+		if( Mesh != null ) {
+			Mesh.Draw();
+		}
+	}
+	
 	void OnDestroy() {
 		var copy = new List<IcebergEntity>( m_entities );
 		foreach( var x in copy ) {
