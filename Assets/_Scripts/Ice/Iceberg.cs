@@ -128,7 +128,7 @@ public class Iceberg : MonoBehaviour {
 		// newIceberg.Mesh.Write();
 		Mesh.Write();
 		
-		Mesh.DrawSkirt();
+		// Mesh.DrawSkirt();
 		
 		var drift = direction.normalized *m_maxSpeed;
 		// newIceberg.SetAdrift( drift, Random.Range( -5f, 5f ) );

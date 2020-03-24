@@ -45,6 +45,10 @@ public class IceGenerator : MonoSingular<IceGenerator> {
 		var genDog = new WatchDog( "Ice generation" );
 		_FillIcebergMesh( iceberg.Mesh, iterations );
 		genDog.Stop();
+		
+		var owners = new Clutter.Mesh.Ownership( iceberg.Mesh, iceberg.Mesh.GetAllVertices() );
+		Debug.LogError( "Ownership data: "+owners );
+		
 		return iceberg;
 	}
 	

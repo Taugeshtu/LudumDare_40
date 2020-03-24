@@ -26,9 +26,17 @@ public class IcebergMesh : MorphMesh {
 		Write( target.transform );
 	}
 	public new void Write( Component target = null ) {
-		base.Write( target );
+		// Current problem is that because we're not launching CompactifyTris, we're having BAD OWNERSHIP data
+		
+		// MergeVertices();
+		
+		DrawSkirt();
 		
 		_RegenerateSkirt();
+		// UnweldVertices();
+		CompactifyVertices();
+		
+		base.Write( target );
 		m_skirtMesh.Write( target );
 	}
 	
@@ -130,8 +138,6 @@ public class IcebergMesh : MorphMesh {
 	}
 	
 	private void _RegenerateSkirt( bool bothSides = false ) {
-		MergeVertices();
-		
 		var selection = new Selection( this, GetAllTriangles( false ) );
 		
 		m_skirtMesh.Clear();
@@ -144,8 +150,6 @@ public class IcebergMesh : MorphMesh {
 			m_skirtMesh.EmitTriangle( ref a, ref b, ref c );
 			m_skirtMesh.EmitTriangle( ref c, ref d, ref a );
 		}
-		
-		MakeVerticesUnique();
 	}
 	
 	/*
