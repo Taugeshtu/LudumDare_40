@@ -117,10 +117,12 @@ public class Iceberg : MonoBehaviour {
 		var driftMesh = Mesh.Split( position, direction );
 		Mesh.Write();
 		
+		/*
 		var newIceberg = IceGenerator.SpawnSplit( driftMesh, pivotPosition );
 		newIceberg.Mesh.RegenerateSkirt();
 		newIceberg.Mesh.Write();
 		newIceberg.SetAdrift( drift, Random.Range( -5f, 5f ) );
+		*/
 		
 		var shift = Vector3.Project( position, direction );
 		var plane = new Plane( shift, -shift.magnitude );

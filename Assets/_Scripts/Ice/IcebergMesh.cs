@@ -50,29 +50,40 @@ public class IcebergMesh : MorphMesh {
 			m_positions[index] = newPosition;
 		}
 		
-		RegenerateSkirt();
+		ClearDeadTriangles();
+		MergeVertices();
+		
+		_RegenerateSkirt();
+		
+		UnweldVertices();
+		ClearDeadTriangles();
+		ClearDeadVertices();
 	}
 	
 	public MorphMesh Split( Vector3 position, Vector3 direction ) {
-		var drifters = base.Slice( position, direction, false );
+		var drifters = base.Slice( position, direction, true );
 		var driftMesh = new MorphMesh();
-		
 		foreach( var tris in drifters ) {
 			driftMesh.EmitTriangle( tris.A.Position, tris.B.Position, tris.C.Position );
 			DeleteTriangle( tris );
 		}
+		ClearDeadTriangles();	// needed because we JUST performed a tris deletion, to bring ownership data in line
 		
+		MergeVertices();
+		OptimizeEdgeVertices();
+		
+		ClearDeadTriangles();	// think this one won't be needed if OptimizeEdgeVertices() works through vertices merge
+		
+		_RegenerateSkirt();
+		
+		UnweldVertices();
 		ClearDeadTriangles();
-		
-		RegenerateSkirt();
+		ClearDeadVertices();
 		
 		return driftMesh;
 	}
 	
-	public void RegenerateSkirt( bool bothSides = false ) {
-		MergeVertices();
-		// DrawSkirt();
-		
+	private void _RegenerateSkirt() {
 		var selection = new Selection( this, GetAllTriangles( false ) );
 		
 		m_skirtMesh.Clear();
@@ -85,10 +96,6 @@ public class IcebergMesh : MorphMesh {
 			m_skirtMesh.EmitTriangle( ref a, ref b, ref c );
 			m_skirtMesh.EmitTriangle( ref c, ref d, ref a );
 		}
-		
-		UnweldVertices();
-		ClearDeadTriangles();
-		ClearDeadVertices();
 	}
 	
 	public void DrawSkirt() {
