@@ -62,7 +62,7 @@ public class IcebergMesh : MorphMesh {
 			DeleteTriangle( tris );
 		}
 		
-		CompactifyTriangles();
+		ClearDeadTriangles();
 		
 		RegenerateSkirt();
 		
@@ -87,7 +87,8 @@ public class IcebergMesh : MorphMesh {
 		}
 		
 		UnweldVertices();
-		CompactifyVertices();
+		ClearDeadTriangles();
+		ClearDeadVertices();
 	}
 	
 	public void DrawSkirt() {
