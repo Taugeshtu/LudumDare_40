@@ -41,30 +41,8 @@ public class IceGenerator : MonoSingular<IceGenerator> {
 	
 #region Public
 	public static Iceberg GenerateNew( int iterations ) {
-		var iceberg = _SpawnIceberg( Vector3.zero );
-		var genDog = new WatchDog( "Ice generation" );
-		_FillIcebergMesh( iceberg.Mesh, iterations );
-		genDog.Stop();
-		
-		var owners = new Clutter.Mesh.Ownership( iceberg.Mesh, iceberg.Mesh.GetAllVertices() );
-		Debug.LogError( "Ownership data: "+owners );
-		
-		return iceberg;
-	}
-	
-	public static Iceberg SpawnSplit( Vector3 pivotPosition ) {
-		var iceberg = _SpawnIceberg( pivotPosition );
-		s_Instance.StartCoroutine( s_Instance._KillerRoutine( iceberg ) );
-		return iceberg;
-	}
-#endregion
-	
-	
-#region Private
-	private static Iceberg _SpawnIceberg( Vector3 pivot ) {
 		var pivotObject = new GameObject( "Iceberg" );
 		pivotObject.layer = 8;
-		pivotObject.transform.position = pivot;
 		
 		var mainFilter = _SpawnMesh( "Visuals", pivotObject.transform );
 		var skirtFilter = _SpawnMesh( "skirt", mainFilter.transform );
@@ -72,9 +50,32 @@ public class IceGenerator : MonoSingular<IceGenerator> {
 		
 		var iceberg = pivotObject.AddComponent<Iceberg>();
 		iceberg.Ignite( mesh );
+		
+		var genDog = new WatchDog( "Ice generation" );
+		_FillIcebergMesh( iceberg.Mesh, iterations );
+		genDog.Stop();
 		return iceberg;
 	}
 	
+	public static Iceberg SpawnSplit( MorphMesh driftMesh, Vector3 pivotPosition ) {
+		var pivotObject = new GameObject( "Iceberg" );
+		pivotObject.layer = 8;
+		pivotObject.transform.position = pivotPosition;
+		
+		var mainFilter = _SpawnMesh( "Visuals", pivotObject.transform );
+		var skirtFilter = _SpawnMesh( "skirt", mainFilter.transform );
+		var mesh = new IcebergMesh( driftMesh, mainFilter, skirtFilter, Skirt );
+		
+		var iceberg = pivotObject.AddComponent<Iceberg>();
+		iceberg.Ignite( mesh );
+		
+		s_Instance.StartCoroutine( s_Instance._KillerRoutine( iceberg ) );
+		return iceberg;
+	}
+#endregion
+	
+	
+#region Private
 	private static MeshFilter _SpawnMesh( string name, Transform parent ) {
 		var meshObject = new GameObject( name );
 		meshObject.layer = 8;

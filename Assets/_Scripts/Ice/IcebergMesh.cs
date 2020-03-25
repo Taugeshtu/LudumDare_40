@@ -12,6 +12,19 @@ public class IcebergMesh : MorphMesh {
 	public Collider Collider { get; private set; }
 	
 #region Implementation
+	public IcebergMesh( MorphMesh mesh, Component mainTarget, Component skirtTarget, Vector3 skirtNormal ) : this( mainTarget, skirtTarget, skirtNormal ) {
+		m_positions = mesh.m_positions;
+		m_colors = mesh.m_colors;
+		m_ownersCount = mesh.m_ownersCount;
+		m_ownersFast = mesh.m_ownersFast;
+		m_ownersExt = mesh.m_ownersExt;
+		
+		m_indeces = mesh.m_indeces;
+		
+		m_topVertexIndex = m_positions.Count - 1;
+		m_topTriangleIndex = (m_indeces.Count /3) - 1;
+	}
+	
 	public IcebergMesh( Component mainTarget, Component skirtTarget, Vector3 skirtNormal ) : base( mainTarget ) {
 		Collider = mainTarget.GetComponent<MeshCollider>();
 		
@@ -26,18 +39,8 @@ public class IcebergMesh : MorphMesh {
 		Write( target.transform );
 	}
 	public new void Write( Component target = null ) {
-		// Current problem is that because we're not launching CompactifyTris, we're having BAD OWNERSHIP data
-		
-		// MergeVertices();
-		
-		DrawSkirt();
-		
-		_RegenerateSkirt();
-		// UnweldVertices();
-		CompactifyVertices();
-		
 		base.Write( target );
-		m_skirtMesh.Write( target );
+		m_skirtMesh.Write();
 	}
 	
 	public void Coerce( float min, float max ) {
@@ -46,75 +49,45 @@ public class IcebergMesh : MorphMesh {
 			var newPosition = m_positions[index] + Vector3.up *heightChange;
 			m_positions[index] = newPosition;
 		}
+		
+		RegenerateSkirt();
 	}
 	
-	public Selection Split( Vector3 position, Vector3 direction ) {
-		// Note: there lies the issue. With direct only we're bound by an unimplemented method in Selection.BreakApart()!
+	public MorphMesh Split( Vector3 position, Vector3 direction ) {
 		var drifters = base.Slice( position, direction, false );
-		// TODO: integrate logic with complex cracks here!
+		var driftMesh = new MorphMesh();
 		
-		return drifters;
-		/*
-		var replacements = new List<Triangle>();
-		var inverted = false;
-		var plane = _GetSplitPlane( position, direction, out inverted );
-		
-		WeldVertices();
-		
-		var trisCopy = new List<Triangle>( m_triangles );
-		var drifters = new List<Triangle>();
-		
-		var tangent = Vector3.right;
-		Vector3.OrthoNormalize( ref direction, ref tangent );
-		
-		Triangle startTris = null;
-		var minDistance = float.MaxValue;
-		var ideal = Vector3.Project( position, tangent );
-		foreach( var tris in trisCopy ) {
-			if( tris._GetSide( ref plane, inverted ) == 0 ) {
-				var projection = Vector3.Project( tris.Center, tangent );
-				var distance = (projection - ideal).magnitude;
-				if( distance < minDistance ) {
-					minDistance = distance;
-					startTris = tris;
-				}
-			}
+		foreach( var tris in drifters ) {
+			driftMesh.EmitTriangle( tris.A.Position, tris.B.Position, tris.C.Position );
+			DeleteTriangle( tris );
 		}
 		
-		if( startTris == null ) {
-			return drifters;
+		CompactifyTriangles();
+		
+		RegenerateSkirt();
+		
+		return driftMesh;
+	}
+	
+	public void RegenerateSkirt( bool bothSides = false ) {
+		MergeVertices();
+		// DrawSkirt();
+		
+		var selection = new Selection( this, GetAllTriangles( false ) );
+		
+		m_skirtMesh.Clear();
+		foreach( var edge in selection.OutlineEdges ) {
+			var a = m_skirtMesh.EmitVertex( edge.A.Position );
+			var b = m_skirtMesh.EmitVertex( edge.A.Position - m_skirtNormal );
+			var c = m_skirtMesh.EmitVertex( edge.B.Position - m_skirtNormal );
+			var d = m_skirtMesh.EmitVertex( edge.B.Position );
+			
+			m_skirtMesh.EmitTriangle( ref a, ref b, ref c );
+			m_skirtMesh.EmitTriangle( ref c, ref d, ref a );
 		}
 		
-		var bendLeft = Dice.Roll( 0.25f ) ? 30f : 30f;
-		var bendRight = Dice.Roll( 0.25f ) ? -30f : -30f;
-		var directionLeft = direction;
-		var directionRight = direction;
-		
-		var section = new Vector3[2];
-		drifters.AddRange( startTris.TrySplit( ref plane, inverted, replacements, out section ) );
-		
-		trisCopy.Remove( startTris );
-		foreach( var startTrisReplacement in replacements ) { trisCopy.Remove( startTrisReplacement ); }
-		trisCopy = _FilterCrack( position, direction, startTris, trisCopy );
-		
-		_CrackSide( startTris, section[0], directionLeft, trisCopy, drifters, replacements );
-		_CrackSide( startTris, section[1], directionRight, trisCopy, drifters, replacements );
-		
-		foreach( var leftover in trisCopy ) {
-			DestroyTriangle( leftover );
-			Draw.Cross( leftover.Center, Palette.green, 1, 2 );
-		}
-		drifters.AddRange( trisCopy );
-		
-		replacements = new List<Triangle>( Optimize( replacements ) );
-		foreach( var newTriangle in replacements ) {
-			AddTriangle( newTriangle );
-		}
-		
-		SyncVerticesToTriangles();
-		
-		return drifters;
-		*/
+		UnweldVertices();
+		CompactifyVertices();
 	}
 	
 	public void DrawSkirt() {
@@ -136,105 +109,10 @@ public class IcebergMesh : MorphMesh {
 		}
 		Debug.Log( edgeDebs );
 	}
-	
-	private void _RegenerateSkirt( bool bothSides = false ) {
-		var selection = new Selection( this, GetAllTriangles( false ) );
-		
-		m_skirtMesh.Clear();
-		foreach( var edge in selection.OutlineEdges ) {
-			var a = m_skirtMesh.EmitVertex( edge.A.Position );
-			var b = m_skirtMesh.EmitVertex( edge.A.Position - m_skirtNormal );
-			var c = m_skirtMesh.EmitVertex( edge.B.Position - m_skirtNormal );
-			var d = m_skirtMesh.EmitVertex( edge.B.Position );
-			
-			m_skirtMesh.EmitTriangle( ref a, ref b, ref c );
-			m_skirtMesh.EmitTriangle( ref c, ref d, ref a );
-		}
-	}
-	
-	/*
-	private List<Triangle> _FilterCrack( Vector3 point, Vector3 originalDirection,
-					Triangle parent,
-					List<Triangle> triangles ) {
-		var inverted = false;
-		var plane = _GetSplitPlane( point, originalDirection, out inverted );
-		
-		for( var i = triangles.Count - 1; i >= 0; i-- ) {
-			var tris = triangles[i];
-			var siding = tris._GetSide( ref plane, inverted );
-			if( siding == -1 ) {
-				// Draw.Cross( tris.Center, Palette.red, 3, 2 );
-				triangles.RemoveAt( i );
-			}
-		}
-		
-		var joinedTriangles = new List<Triangle>();
-		joinedTriangles.Add( parent );
-		
-		var foundJoin = true;
-		while( foundJoin ) {
-			for( var a = 0; a < joinedTriangles.Count; a++ ) {
-				var joined = joinedTriangles[a];
-				foundJoin = false;
-				
-				for( var b = triangles.Count - 1; b >= 0; b-- ) {
-					var tris = triangles[b];
-					if( tris.SharesSide( joined ) ) {
-						triangles.RemoveAt( b );
-						joinedTriangles.Add( tris );
-						foundJoin = true;
-						
-						// tris.DrawMe( Palette.violet );
-						break;
-					}
-				}
-				if( foundJoin ) { break; }
-			}
-		}
-		
-		joinedTriangles.Remove( parent );
-		return joinedTriangles;
-	}
-	
-	private void _CrackSide( Triangle parent, Vector3 point, Vector3 originalDirection,
-					List<Triangle> triangles,
-					List<Triangle> drifters,
-					List<Triangle> replacements ) {
-		var inverted = false;
-		var plane = _GetSplitPlane( point, originalDirection, out inverted );
-		
-		for( var i = triangles.Count - 1; i >= 0; i-- ) {
-			var tris = triangles[i];
-			var siding = tris._GetSide( ref plane, inverted );
-			
-			if( siding == 0 ) {
-				if( tris.SharesSide( parent ) ) {
-					triangles.RemoveAt( i );
-					
-					var section = new Vector3[2];
-					drifters.AddRange( tris.TrySplit( ref plane, inverted, replacements, out section ) );
-					
-					var newPoint = section[0].EpsilonEquals( point ) ? section[1] : section[0];
-					_CrackSide( tris, newPoint, originalDirection, triangles, drifters, replacements );
-					break;
-				}
-			}
-		}
-	}
-	*/
 #endregion
 	
 	
 #region Private
-	private Plane _GetSplitPlane( Vector3 position, Vector3 direction, out bool isInverted ) {
-		isInverted = false;
-		var shift = Vector3.Project( position, direction );
-		var plane = new Plane( shift, -shift.magnitude );
-		if( Vector3.Angle( shift, direction ) > 90 ) {	// Meaning we're beyond zer0
-			isInverted = true;
-		}
-		return plane;
-	}
 #endregion
 	
 	

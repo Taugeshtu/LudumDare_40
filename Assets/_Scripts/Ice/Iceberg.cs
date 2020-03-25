@@ -110,28 +110,17 @@ public class Iceberg : MonoBehaviour {
 		AddEntity( monster );
 	}
 	
-	
-	
 	public void Split( Vector3 position, Vector3 direction ) {
 		var pivotPosition = position + direction.normalized *IceGenerator.GenRadius *0.2f;
+		var drift = direction.normalized *m_maxSpeed;
 		
-		var drifters = Mesh.Split( position, direction );
-		// var newIceberg = IceGenerator.SpawnSplit( pivotPosition );
-		
-		foreach( var tris in drifters ) {
-			// newIceberg.Mesh.EmitTriangle( tris.A.Position, tris.B.Position, tris.C.Position );
-			Mesh.DeleteTriangle( tris );
-		}
-		
-		// Debug.Log( "Drifters: "+drifters.Dump() );
-		// Debug.Log( newIceberg.Mesh.Dump() );
-		// newIceberg.Mesh.Write();
+		var driftMesh = Mesh.Split( position, direction );
 		Mesh.Write();
 		
-		// Mesh.DrawSkirt();
-		
-		var drift = direction.normalized *m_maxSpeed;
-		// newIceberg.SetAdrift( drift, Random.Range( -5f, 5f ) );
+		var newIceberg = IceGenerator.SpawnSplit( driftMesh, pivotPosition );
+		newIceberg.Mesh.RegenerateSkirt();
+		newIceberg.Mesh.Write();
+		newIceberg.SetAdrift( drift, Random.Range( -5f, 5f ) );
 		
 		var shift = Vector3.Project( position, direction );
 		var plane = new Plane( shift, -shift.magnitude );
