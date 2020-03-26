@@ -5207,7 +5207,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_player: {fileID: 583522317}
-  m_iceIterations: 3
+  m_iceIterations: 0
 --- !u!1001 &2083548998
 PrefabInstance:
   m_ObjectHideFlags: 0

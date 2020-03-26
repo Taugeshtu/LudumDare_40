@@ -61,6 +61,9 @@ public class IcebergMesh : MorphMesh {
 	}
 	
 	public MorphMesh Split( Vector3 position, Vector3 direction ) {
+		// Note: doing merge here because otherwise bound Slice will get bound by one tris
+		MergeVertices();
+		
 		var drifters = base.Slice( position, direction, true );
 		var driftMesh = new MorphMesh();
 		foreach( var tris in drifters ) {
@@ -69,10 +72,7 @@ public class IcebergMesh : MorphMesh {
 		}
 		ClearDeadTriangles();	// needed because we JUST performed a tris deletion, to bring ownership data in line
 		
-		MergeVertices();
-		OptimizeEdgeVertices();
-		
-		ClearDeadTriangles();	// think this one won't be needed if OptimizeEdgeVertices() works through vertices merge
+		OptimizeEdgeVertices();	// fixes the splits
 		
 		_RegenerateSkirt();
 		
