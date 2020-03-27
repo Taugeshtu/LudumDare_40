@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 
-public class AICreature : CreatureBase {
+public abstract class AICreature : CreatureBase {
 	private static Vector2 s_decisionInterval = new Vector2( 2, 4 );
 	
 	private float m_nextDecitionTime;

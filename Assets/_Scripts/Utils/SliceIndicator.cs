@@ -56,7 +56,7 @@ public class SliceIndicator : MonoBehaviour {
 			
 			var ray = new Ray( corner + chunk *i, Vector3.down );
 			RaycastHit hit;
-			var mask = (1 << 8);
+			var mask = (1 << Game.c_layerIceberg);
 			if( Physics.Raycast( ray, out hit, 20f, mask ) ) {
 				hits[i] = hit.point;
 				gotHits[i] = true;

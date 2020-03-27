@@ -157,7 +157,7 @@ public class Iceberg : MonoBehaviour {
 			var point = Random.insideUnitCircle.X0Y() *Mesh.Target.mesh.bounds.extents.magnitude;
 			var ray = new Ray( point + Vector3.up *20, Vector3.down );
 			RaycastHit hit;
-			var mask = (1 << 8);
+			var mask = (1 << Game.c_layerIceberg);
 			
 			if( Physics.Raycast( ray, out hit, 50f, mask ) ) {
 				if( hit.collider == Mesh.Collider ) {

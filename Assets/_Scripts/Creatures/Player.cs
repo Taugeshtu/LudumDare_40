@@ -10,6 +10,11 @@ public class Player : CreatureBase {
 		
 	}
 	
+	private struct Cast {
+		public bool HitIceberg;
+		public Vector3 Point;
+	}
+	
 	[Header( "Ice-split" )]
 	[SerializeField] private float m_splitReach = 1.5f;
 	[SerializeField] private AttackIndicator m_attackUI;
@@ -31,7 +36,7 @@ public class Player : CreatureBase {
 	private bool m_spawned = false;
 	
 	protected override int _layerMask {
-		get { return (1 << 8) + (1 << 9); }	// Note: because Player can actually walk on monsters
+		get { return (1 << Game.c_layerIceberg) + (1 << Game.c_layerCreature); }	// Note: because Player can actually walk on monsters
 	}
 	
 	public int Kills;
@@ -212,7 +217,7 @@ public class Player : CreatureBase {
 		
 		var allChildren = GetComponentsInChildren<Transform>();
 		foreach( var child in allChildren ) {
-			child.gameObject.layer = 10;
+			child.gameObject.layer = Game.c_layerPlayer;
 		}
 	}
 	
@@ -232,6 +237,10 @@ public class Player : CreatureBase {
 		var newMag = Mathf.Clamp( direction.magnitude, 0.5f, m_splitReach );
 		direction = direction.normalized *newMag;
 		point = transform.position + direction;
+	}
+	
+	private Cast _Cast() {
+		
 	}
 #endregion
 	

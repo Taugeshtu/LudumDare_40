@@ -6,6 +6,11 @@ using System.Collections.Generic;
 using Clutter;
 
 public class Game : MonoSingular<Game> {
+	public const int c_layerWater = 4;
+	public const int c_layerIceberg = 8;
+	public const int c_layerCreature = 9;
+	public const int c_layerPlayer = 10;
+	
 	protected override BehaviourSettings Behaviour { get { return new BehaviourSettings( false, true, true ); } }
 	
 	private enum GameState {

@@ -17,7 +17,7 @@ public class Monster : AICreature {
 	private State m_state;
 	
 	protected override int _layerMask {
-		get { return (1 << 8) + (1 << 4); }	// Note: because Monster can swim can actually walk on monsters
+		get { return (1 << Game.c_layerIceberg) + (1 << Game.c_layerWater); }	// Note: because Monster can swim can actually walk on monsters
 	}
 	
 	public bool AliveAndActive {

@@ -27,9 +27,7 @@ public abstract class CreatureBase : IcebergEntity {
 		}
 	}
 	
-	protected virtual int _layerMask {
-		get { return (1 << 8); }
-	}
+	protected abstract int _layerMask { get; }
 	
 	public bool IsAlive { get; private set; }
 	public Vector3 MoveDirection { get { return m_moveDirection; } }
@@ -145,7 +143,7 @@ public abstract class CreatureBase : IcebergEntity {
 	protected virtual void _Ignite() {
 		var allChildren = GetComponentsInChildren<Transform>();
 		foreach( var child in allChildren ) {
-			child.gameObject.layer = 9;
+			child.gameObject.layer = Game.c_layerCreature;
 		}
 		IsAlive = true;
 	}

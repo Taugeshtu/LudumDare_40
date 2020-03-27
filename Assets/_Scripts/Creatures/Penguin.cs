@@ -15,6 +15,10 @@ public class Penguin : AICreature {
 	private static float s_monsterAvoidRedius { get { return s_herdRadius *0.5f; } }
 	private static float s_penguinAvoidRedius = 1.5f;
 	
+	protected override int _layerMask {
+		get { return (1 << Game.c_layerIceberg); }
+	}
+	
 	private State m_state;
 	private Vector3 m_targetPosition;
 	
@@ -144,14 +148,21 @@ public class Penguin : AICreature {
 		return result;
 	}
 	
-	private List<Penguin> _GetFlock() {
-		var result = new List<Penguin>();
+	private List<CreatureBase> _GetFlock() {
+		var result = new List<CreatureBase>();
 		
 		foreach( var pengu in m_iceberg.Penguins ) {
 			if( pengu.IsAlive && pengu != this ) {
 				if( Vector3.Distance( Position, pengu.Position ) < s_detectionRedius ) {
 					result.Add( pengu );
 				}
+			}
+		}
+		
+		// Now the player counts as 3 penguins!
+		if( Iceberg != null && Iceberg.Player != null ) {
+			for( var i = 0; i < 3; i++ ) {
+				result.Add( Iceberg.Player );
 			}
 		}
 		

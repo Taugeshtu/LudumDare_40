@@ -42,7 +42,7 @@ public class IceGenerator : MonoSingular<IceGenerator> {
 #region Public
 	public static Iceberg GenerateNew( int iterations ) {
 		var pivotObject = new GameObject( "Iceberg" );
-		pivotObject.layer = 8;
+		pivotObject.layer = Game.c_layerIceberg;
 		
 		var mainFilter = _SpawnMesh( "Visuals", pivotObject.transform );
 		var skirtFilter = _SpawnMesh( "skirt", mainFilter.transform );
@@ -59,7 +59,7 @@ public class IceGenerator : MonoSingular<IceGenerator> {
 	
 	public static Iceberg SpawnSplit( MorphMesh driftMesh, Vector3 pivotPosition ) {
 		var pivotObject = new GameObject( "Iceberg" );
-		pivotObject.layer = 8;
+		pivotObject.layer = Game.c_layerIceberg;
 		pivotObject.transform.position = pivotPosition;
 		
 		var mainFilter = _SpawnMesh( "Visuals", pivotObject.transform );
@@ -78,7 +78,7 @@ public class IceGenerator : MonoSingular<IceGenerator> {
 #region Private
 	private static MeshFilter _SpawnMesh( string name, Transform parent ) {
 		var meshObject = new GameObject( name );
-		meshObject.layer = 8;
+		meshObject.layer = Game.c_layerIceberg;
 		meshObject.transform.SetParent( parent, true );
 		
 		var filter = meshObject.AddComponent<MeshFilter>();
