@@ -2,6 +2,9 @@
 using System.Collections.Generic;
 
 public class Player : CreatureBase {
+	private const float c_moveTrimStartTime = 0.3f;
+	private const float c_moveTrimDuration = 0.5f;
+	
 	private enum State {
 		Walking,
 		Attacking,
@@ -28,6 +31,7 @@ public class Player : CreatureBase {
 	[SerializeField] private float m_splitReach = 1.5f;
 	[SerializeField] private AttackIndicator m_attackUI;
 	[SerializeField] private SliceIndicator m_splitUI;
+	[SerializeField] private GameObject m_walkTargetUI;
 	
 	[SerializeField] private AudioSource m_source;
 	[SerializeField] private AudioClip[] m_splitSounds;
@@ -44,6 +48,8 @@ public class Player : CreatureBase {
 	private Monster m_target;
 	private bool m_spawned = false;
 	
+	private bool m_hadClick = false;
+	private float m_clickStartTime;
 	private Vector3? m_motionTarget;
 	
 	protected override int _layerMask {
@@ -62,12 +68,19 @@ public class Player : CreatureBase {
 		// 1. Get iceberg hit
 		// 2. If the hit is
 		
-		var castResult = _Cast();
 		var attackKeyPressed = (Input.GetAxis( "Fire1" ) > 0.1f);
+		var clickChanged = (attackKeyPressed != m_hadClick);
+		if( clickChanged ) {
+			m_clickStartTime = Time.time;
+		}
+		m_hadClick = attackKeyPressed;
 		
+		var castResult = _Cast();
 		if( m_state == State.Walking ) {
 			_ProcessMovement( castResult, attackKeyPressed );
 		}
+		
+		_SyncUI();
 		
 		/*
 		_ProcessKeys();
@@ -227,6 +240,14 @@ public class Player : CreatureBase {
 		if( arrowMove.sqrMagnitude.EpsilonEquals( 0f ) ) {
 			if( attackPressed ) {
 				m_motionTarget = castResult.WalkTarget;
+				
+				var timeSinceClickStart = Time.time - m_clickStartTime;
+				if( timeSinceClickStart > c_moveTrimStartTime ) {
+					var factor = Mathf.InverseLerp( c_moveTrimStartTime, c_moveTrimStartTime + c_moveTrimDuration, timeSinceClickStart );
+					var targetDiff = (castResult.WalkTarget - transform.position);
+					var constrainedDiff = Vector3.Lerp( targetDiff, targetDiff.normalized, factor );
+					m_motionTarget = constrainedDiff + transform.position;
+				}
 			}
 			
 			if( m_motionTarget.HasValue ) {
@@ -237,6 +258,16 @@ public class Player : CreatureBase {
 		else {
 			m_motionTarget = null;
 			_SetMoveDirection( arrowMove );
+		}
+	}
+	
+	private void _SyncUI() {
+		m_attackUI.gameObject.SetActive( false );
+		m_splitUI.gameObject.SetActive( false );
+		
+		m_walkTargetUI.SetActive( m_motionTarget.HasValue );
+		if( m_motionTarget.HasValue ) {
+			m_walkTargetUI.transform.position = m_motionTarget.Value;
 		}
 	}
 #endregion
