@@ -75,7 +75,8 @@ public class Player : CreatureBase {
 		}
 		m_hadClick = attackKeyPressed;
 		
-		var castResult = _Cast();
+		var ray = Camera.main.ScreenPointToRay( Input.mousePosition );
+		var castResult = _Cast( ray );
 		if( m_state == State.Walking ) {
 			_ProcessMovement( castResult, attackKeyPressed );
 		}
@@ -186,10 +187,9 @@ public class Player : CreatureBase {
 		}
 	}
 	
-	private CastResult _Cast() {
+	private CastResult _Cast( Ray ray ) {
 		var result = new CastResult();
 		
-		var ray = Camera.main.ScreenPointToRay( Input.mousePosition );
 		var plane = new Plane( Vector3.up, transform.position );
 		result.PlanePoint = plane.Cast( ray );
 		
@@ -267,7 +267,10 @@ public class Player : CreatureBase {
 		
 		m_walkTargetUI.SetActive( m_motionTarget.HasValue );
 		if( m_motionTarget.HasValue ) {
-			m_walkTargetUI.transform.position = m_motionTarget.Value;
+			var ray = new Ray( m_motionTarget.Value + Vector3.up *10, Vector3.down );
+			var castResult = _Cast( ray );
+			Draw.Cross( castResult.WalkTarget, Palette.rose );
+			m_walkTargetUI.transform.position = castResult.WalkTarget;
 		}
 	}
 #endregion
