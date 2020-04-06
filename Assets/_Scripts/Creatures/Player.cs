@@ -10,7 +10,6 @@ public class Player : CreatureBase {
 		Attacking,
 		ChargingSplit,
 		LandingSplit
-		
 	}
 	
 	private struct CastResult {
@@ -56,6 +55,13 @@ public class Player : CreatureBase {
 		get { return (1 << Game.c_layerIceberg) + (1 << Game.c_layerCreature); }	// Note: because Player can actually walk on monsters
 	}
 	
+	private bool _primaryKeyPressed {
+		get { return (Input.GetAxis( "Fire1" ) > 0.1f); }
+	}
+	private bool _secondaryKeyPressed {
+		get { return (Input.GetAxis( "Fire2" ) > 0.1f); }
+	}
+	
 	public int Kills;
 	
 #region Implementation
@@ -64,53 +70,13 @@ public class Player : CreatureBase {
 			return;
 		}
 		
-		// new logic:
-		// 1. Get iceberg hit
-		// 2. If the hit is
-		
-		var attackKeyPressed = (Input.GetAxis( "Fire1" ) > 0.1f);
-		var clickChanged = (attackKeyPressed != m_hadClick);
-		if( clickChanged ) {
-			m_clickStartTime = Time.time;
-		}
-		m_hadClick = attackKeyPressed;
-		
 		var ray = Camera.main.ScreenPointToRay( Input.mousePosition );
 		var castResult = _Cast( ray );
-		if( m_state == State.Walking ) {
-			_ProcessMovement( castResult, attackKeyPressed );
-		}
+		
+		_ProcessActions( castResult );
+		_ProcessMovement( castResult );
 		
 		_SyncUI();
-		
-		/*
-		_ProcessKeys();
-		_ProcessMovement();
-		
-		var point = Vector3.zero;
-		var direction = Vector3.zero;
-		_GetCut( out point, out direction );
-		
-		m_attackUI.gameObject.SetActive( false );
-		m_splitUI.gameObject.SetActive( false );
-		if( m_state == State.Walking ) {
-			m_target = _SeekTarget();
-			if( m_target != null ) {
-				point = m_target.transform.position;
-				direction = m_target.transform.forward;
-				
-				m_attackUI.gameObject.SetActive( true );
-				m_attackUI.Position( point, direction );
-			}
-			else {
-				m_splitUI.gameObject.SetActive( m_canSplit );
-				m_splitUI.Position( point, direction );
-			}
-		}
-		else if( m_state == State.ChargingSplit ) {
-			m_splitUI.gameObject.SetActive( m_canSplit );
-		}
-		*/
 	}
 #endregion
 	
@@ -130,6 +96,115 @@ public class Player : CreatureBase {
 	
 	
 #region Private
+	protected override void _Ignite() {
+		base._Ignite();
+		
+		var allChildren = GetComponentsInChildren<Transform>();
+		foreach( var child in allChildren ) {
+			child.gameObject.layer = Game.c_layerPlayer;
+		}
+	}
+	
+	protected override void _Move() {
+		base._Move();
+		
+		// TODO: plug in animations
+		
+		if( m_motionTarget.HasValue ) {
+			var positionDiff = (m_motionTarget.Value - transform.position).WithY( 0f );
+			if( positionDiff.magnitude < 0.1f ) {
+				m_motionTarget = null;
+				_SetMoveDirection( Vector3.zero );
+			}
+		}
+	}
+	
+	private void _ProcessActions( CastResult castResult ) {
+		var attackKeyPressed = _primaryKeyPressed;
+		var splitKeyPressed = _secondaryKeyPressed;
+		
+		if( m_canSplit == false ) {
+			if( !splitKeyPressed ) {
+				m_canSplit = true;
+			}
+		}
+		
+		if( m_state == State.Walking ) {
+			if( splitKeyPressed && m_canSplit ) {
+				m_state = State.ChargingSplit;
+				m_stateTimer = Time.time + TimingManager.ChargeTime;
+				m_skeletool.Enqueue( "Split1", m_splitCurve, TimingManager.ChargeTime );
+			}
+			
+			// TODO: will have to rework that, since it doesn't play well with Diablo-movement
+			/*
+			if( attackKeyPressed ) {
+				m_state = State.Attacking;
+				m_stateTimer = Time.time + TimingManager.AttackTime;
+				_OnAttack();
+			}
+			*/
+		}
+		
+		if( Time.time > m_stateTimer ) {
+			if( m_state == State.ChargingSplit ) {
+				if( splitKeyPressed ) {
+					m_canSplit = false;
+					m_state = State.LandingSplit;
+					m_stateTimer = Time.time + TimingManager.SplitTime;
+					_OnSplitLanding();
+				}
+				else {
+					m_state = State.Walking;
+				}
+			}
+			else if( m_state == State.LandingSplit ) {
+				// Note: Split ended
+				m_state = State.Walking;
+			}
+			else if( m_state == State.Attacking ) {
+				// Note: Attack ended
+				_OnAttackLanding();
+				m_state = State.Walking;
+			}
+		}
+	}
+	
+	private void _ProcessMovement( CastResult castResult ) {
+		if( m_state != State.Walking ) { return; }
+		
+		_SetMoveDirection( Vector3.zero );
+		
+		if( _primaryKeyPressed != m_hadClick ) {
+			m_clickStartTime = Time.time;
+		}
+		m_hadClick = _primaryKeyPressed;
+		
+		var mouseMoveTime = Time.time - m_clickStartTime;
+		var arrowMove = _GetArrowMove();
+		if( arrowMove.sqrMagnitude.EpsilonEquals( 0f ) ) {
+			if( _primaryKeyPressed ) {
+				// Updating motion target
+				m_motionTarget = castResult.WalkTarget;
+				
+				if( mouseMoveTime > c_moveTrimStartTime ) {
+					var factor = Mathf.InverseLerp( c_moveTrimStartTime, c_moveTrimStartTime + c_moveTrimDuration, mouseMoveTime );
+					var targetDiff = (castResult.WalkTarget - transform.position);
+					var constrainedDiff = Vector3.Lerp( targetDiff, targetDiff.normalized, factor );
+					m_motionTarget = constrainedDiff + transform.position;
+				}
+			}
+			
+			if( m_motionTarget.HasValue ) {
+				_SetMoveDirection( (m_motionTarget.Value - transform.position).WithY( 0f ).normalized );
+			}
+		}
+		else {
+			m_motionTarget = null;
+			_SetMoveDirection( arrowMove );
+		}
+	}
+	
 	private void _OnAttack() {
 		m_skeletool.Enqueue( "Attack", m_curve, TimingManager.AttackTime );
 	}
@@ -164,29 +239,24 @@ public class Player : CreatureBase {
 		}
 	}
 	
-	protected override void _Ignite() {
-		base._Ignite();
+	private void _SyncUI() {
+		var isSplitting = (m_state == State.ChargingSplit) || (m_state == State.LandingSplit);
 		
-		var allChildren = GetComponentsInChildren<Transform>();
-		foreach( var child in allChildren ) {
-			child.gameObject.layer = Game.c_layerPlayer;
-		}
-	}
-	
-	protected override void _Move() {
-		base._Move();
+		m_attackUI.gameObject.SetActive( false );
+		m_splitUI.gameObject.SetActive( isSplitting );
 		
-		// TODO: plug in animations
-		
+		m_walkTargetUI.SetActive( m_motionTarget.HasValue );
 		if( m_motionTarget.HasValue ) {
-			var positionDiff = (m_motionTarget.Value - transform.position).WithY( 0f );
-			if( positionDiff.magnitude < 0.1f ) {
-				m_motionTarget = null;
-				_SetMoveDirection( Vector3.zero );
-			}
+			var ray = new Ray( m_motionTarget.Value + Vector3.up *10, Vector3.down );
+			var castResult = _Cast( ray );
+			Draw.Cross( castResult.WalkTarget, Palette.rose );
+			m_walkTargetUI.transform.position = castResult.WalkTarget;
 		}
 	}
+#endregion
 	
+	
+#region Utility
 	private CastResult _Cast( Ray ray ) {
 		var result = new CastResult();
 		
@@ -203,6 +273,7 @@ public class Player : CreatureBase {
 				result.IcebergPoint = hit.point;
 			}
 			
+			// TODO: collect multiple monsters, find the one closest to the point!
 			if( monster != null ) {
 				result.Monster = monster;
 			}
@@ -232,120 +303,6 @@ public class Player : CreatureBase {
 		var newMag = Mathf.Clamp( direction.magnitude, 0.5f, m_splitReach );
 		direction = direction.normalized *newMag;
 		point = transform.position + direction;
-	}
-	
-	private void _ProcessMovement( CastResult castResult, bool attackPressed ) {
-		var arrowMove = _GetArrowMove();
-		
-		if( arrowMove.sqrMagnitude.EpsilonEquals( 0f ) ) {
-			if( attackPressed ) {
-				m_motionTarget = castResult.WalkTarget;
-				
-				var timeSinceClickStart = Time.time - m_clickStartTime;
-				if( timeSinceClickStart > c_moveTrimStartTime ) {
-					var factor = Mathf.InverseLerp( c_moveTrimStartTime, c_moveTrimStartTime + c_moveTrimDuration, timeSinceClickStart );
-					var targetDiff = (castResult.WalkTarget - transform.position);
-					var constrainedDiff = Vector3.Lerp( targetDiff, targetDiff.normalized, factor );
-					m_motionTarget = constrainedDiff + transform.position;
-				}
-			}
-			
-			if( m_motionTarget.HasValue ) {
-				var moveDirection = (m_motionTarget.Value - transform.position).WithY( 0f );
-				_SetMoveDirection( moveDirection.normalized );
-			}
-		}
-		else {
-			m_motionTarget = null;
-			_SetMoveDirection( arrowMove );
-		}
-	}
-	
-	private void _SyncUI() {
-		m_attackUI.gameObject.SetActive( false );
-		m_splitUI.gameObject.SetActive( false );
-		
-		m_walkTargetUI.SetActive( m_motionTarget.HasValue );
-		if( m_motionTarget.HasValue ) {
-			var ray = new Ray( m_motionTarget.Value + Vector3.up *10, Vector3.down );
-			var castResult = _Cast( ray );
-			Draw.Cross( castResult.WalkTarget, Palette.rose );
-			m_walkTargetUI.transform.position = castResult.WalkTarget;
-		}
-	}
-#endregion
-	
-	
-#region Temporary
-	private void _ProcessKeys() {
-		var attackKeyPressed = (Input.GetAxis( "Fire1" ) > 0.1f);
-		var splitKeyPressed = (Input.GetAxis( "Fire2" ) > 0.1f);
-		
-		if( m_canSplit == false ) {
-			if( !splitKeyPressed ) {
-				m_canSplit = true;
-			}
-		}
-		
-		if( m_state == State.Walking ) {
-			if( splitKeyPressed && m_canSplit ) {
-				m_state = State.ChargingSplit;
-				m_stateTimer = Time.time + TimingManager.ChargeTime;
-				m_skeletool.Enqueue( "Split1", m_splitCurve, TimingManager.ChargeTime );
-			}
-			
-			if( attackKeyPressed ) {
-				m_state = State.Attacking;
-				m_stateTimer = Time.time + TimingManager.AttackTime;
-				_OnAttack();
-			}
-		}
-		
-		if( Time.time > m_stateTimer ) {
-			if( m_state == State.ChargingSplit ) {
-				if( splitKeyPressed ) {
-					m_canSplit = false;
-					m_state = State.LandingSplit;
-					m_stateTimer = Time.time + TimingManager.SplitTime;
-					_OnSplitLanding();
-				}
-				else {
-					m_state = State.Walking;
-				}
-			}
-			else if( m_state == State.LandingSplit ) {
-				// Note: Split ended
-				m_state = State.Walking;
-			}
-			else if( m_state == State.Attacking ) {
-				// Note: Attack ended
-				_OnAttackLanding();
-				m_state = State.Walking;
-			}
-		}
-	}
-	
-	private Monster _SeekTarget() {
-		var point = Vector3.zero;
-		var direction = Vector3.zero;
-		_GetCut( out point, out direction );
-		
-		Monster found = null;
-		var minDistance = float.MaxValue;
-		foreach( var monster in m_iceberg.Monsters ) {
-			if( monster.IsAlive ) {
-				var diffToMonster = (monster.transform.position - point);
-				if( diffToMonster.magnitude < minDistance ) {
-					found = monster;
-					minDistance = diffToMonster.magnitude;
-				}
-			}
-		}
-		
-		if( minDistance > 2f ) {
-			found = null;
-		}
-		return found;
 	}
 #endregion
 }
