@@ -1775,6 +1775,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6253726537923122336}
+  - component: {fileID: 7877190322867030558}
   m_Layer: 0
   m_Name: WalkUI
   m_TagString: Untagged
@@ -1797,3 +1798,18 @@ Transform:
   m_Father: {fileID: 1852078339306811036}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7877190322867030558
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7875468284426279352}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5dae2e8acfded9741b2c1a8562288c7a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_visual: {fileID: 3297059919663316220}
+  m_radius: 0.1
+  m_rollSpeed: 0.02

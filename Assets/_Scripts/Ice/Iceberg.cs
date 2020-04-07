@@ -31,7 +31,7 @@ public class Iceberg : MonoBehaviour {
 	
 	void OnDrawGizmos() {
 		if( Mesh != null ) {
-			Mesh.Draw();
+			// Mesh.Draw();
 		}
 	}
 	
