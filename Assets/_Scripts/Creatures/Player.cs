@@ -131,17 +131,13 @@ public class Player : CreatureBase {
 		
 		if( m_state == State.Walking ) {
 			if( splitKeyPressed && m_canSplit ) {
-				m_state = State.ChargingSplit;
-				m_stateTimer = Time.time + TimingManager.ChargeTime;
-				m_skeletool.Enqueue( "Split1", m_splitCurve, TimingManager.ChargeTime );
+				_StartSplit();
 			}
 			
 			// TODO: will have to rework that, since it doesn't play well with Diablo-movement
 			/*
 			if( attackKeyPressed ) {
-				m_state = State.Attacking;
-				m_stateTimer = Time.time + TimingManager.AttackTime;
-				_OnAttack();
+				_StartAttack();
 			}
 			*/
 		}
@@ -150,9 +146,7 @@ public class Player : CreatureBase {
 			if( m_state == State.ChargingSplit ) {
 				if( splitKeyPressed ) {
 					m_canSplit = false;
-					m_state = State.LandingSplit;
-					m_stateTimer = Time.time + TimingManager.SplitTime;
-					_OnSplitLanding();
+					_LandSplit();
 				}
 				else {
 					m_state = State.Walking;
@@ -164,7 +158,7 @@ public class Player : CreatureBase {
 			}
 			else if( m_state == State.Attacking ) {
 				// Note: Attack ended
-				_OnAttackLanding();
+				_AttackLanded();
 				m_state = State.Walking;
 			}
 		}
@@ -205,11 +199,13 @@ public class Player : CreatureBase {
 		}
 	}
 	
-	private void _OnAttack() {
+	private void _StartAttack() {
+		m_state = State.Attacking;
+		m_stateTimer = Time.time + TimingManager.AttackTime;
 		m_skeletool.Enqueue( "Attack", m_curve, TimingManager.AttackTime );
 	}
 	
-	private void _OnAttackLanding() {
+	private void _AttackLanded() {
 		if( m_target != null ) {
 			m_target.GetKilled();
 			Kills += 1;
@@ -220,8 +216,16 @@ public class Player : CreatureBase {
 		CameraShake.MakeAShake( false );
 	}
 	
-	private void _OnSplitLanding() {
-		// TODO: play animation!
+	private void _StartSplit() {
+		m_state = State.ChargingSplit;
+		m_stateTimer = Time.time + TimingManager.ChargeTime;
+		m_skeletool.Enqueue( "Split1", m_splitCurve, TimingManager.ChargeTime );
+	}
+	
+	private void _LandSplit() {
+		m_state = State.LandingSplit;
+		m_stateTimer = Time.time + TimingManager.SplitTime;
+		
 		var clip = m_splitSounds[Random.Range( 0, m_splitSounds.Length )];
 		m_source.PlayOneShot( clip );
 		
