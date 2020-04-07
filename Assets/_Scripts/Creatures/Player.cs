@@ -1,5 +1,8 @@
 ﻿using UnityEngine;
+using System;
 using System.Collections.Generic;
+
+using Random = UnityEngine.Random;
 
 public class Player : CreatureBase {
 	private const float c_moveTrimStartTime = 0.3f;
@@ -234,20 +237,21 @@ public class Player : CreatureBase {
 		m_skeletool.Enqueue( "Split2", m_curve, TimingManager.SplitTime /2 );
 		m_skeletool.GoIdle( m_splitCurve2, TimingManager.SplitTime /2 );
 		
-		var point = Vector3.zero;
-		var direction = Vector3.zero;
-		_GetCut( out point, out direction );
-		
+		var cut = _GetCut();
 		if( m_iceberg != null ) {
-			m_iceberg.Split( point, direction );
+			m_iceberg.Split( cut.Item1, cut.Item2 );
 		}
 	}
 	
 	private void _SyncUI() {
-		var isSplitting = (m_state == State.ChargingSplit) || (m_state == State.LandingSplit);
-		
 		m_attackUI.gameObject.SetActive( false );
+		
+		var isSplitting = (m_state == State.ChargingSplit) || (m_state == State.LandingSplit);
+		var cut = _GetCut();
 		m_splitUI.gameObject.SetActive( isSplitting );
+		if( m_state == State.ChargingSplit ) {
+			m_splitUI.Position( cut.Item1, cut.Item2 );
+		}
 		
 		m_walkTargetUI.SetActive( m_motionTarget.HasValue );
 		if( m_motionTarget.HasValue ) {
@@ -297,16 +301,17 @@ public class Player : CreatureBase {
 		return moveDirection;
 	}
 	
-	private void _GetCut( out Vector3 point, out Vector3 direction ) {
+	private ValueTuple<Vector3, Vector3> _GetCut() {
 		var plane = new Plane( Vector3.up, transform.position );
 		var ray = Camera.main.ScreenPointToRay( Input.mousePosition );
-		point = plane.Cast( ray );
+		var point = plane.Cast( ray );
 		var diff = point - transform.position;
-		direction = (diff).normalized.XZ().X0Y();
+		var direction = (diff).normalized.XZ().X0Y();
 		
 		var newMag = Mathf.Clamp( direction.magnitude, 0.5f, m_splitReach );
 		direction = direction.normalized *newMag;
 		point = transform.position + direction;
+		return new ValueTuple<Vector3, Vector3>( point, direction );
 	}
 #endregion
 }
