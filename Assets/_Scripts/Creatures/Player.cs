@@ -7,12 +7,15 @@ using Random = UnityEngine.Random;
 public class Player : CreatureBase {
 	private const float c_moveTrimStartTime = 0.3f;
 	private const float c_moveTrimDuration = 0.5f;
+	private const float c_climbDistance = 5f;
 	
 	private enum State {
 		Walking,
 		Attacking,
 		ChargingSplit,
-		LandingSplit
+		LandingSplit,
+		Falling,
+		Climbing
 	}
 	
 	private struct CastResult {
@@ -29,16 +32,18 @@ public class Player : CreatureBase {
 		}
 	}
 	
-	[Header( "Ice-split" )]
+	[Header( "Links" )]
 	[SerializeField] private float m_splitReach = 1.5f;
 	[SerializeField] private AttackIndicator m_attackUI;
 	[SerializeField] private SliceIndicator m_splitUI;
 	[SerializeField] private GameObject m_walkTargetUI;
 	
+	[Header( "Audio" )]
 	[SerializeField] private AudioSource m_source;
 	[SerializeField] private AudioClip[] m_splitSounds;
 	[SerializeField] private AudioClip[] m_attackSounds;
 	
+	[Header( "Animations" )]
 	[SerializeField] private Skeletool m_skeletool;
 	[SerializeField] private AnimationCurve m_curve;
 	[SerializeField] private AnimationCurve m_splitCurve;
@@ -53,6 +58,9 @@ public class Player : CreatureBase {
 	private bool m_hadClick = false;
 	private float m_clickStartTime;
 	private Vector3? m_motionTarget;
+	
+	private bool m_wasInContact = false;
+	private Vector3 m_climbPosition;
 	
 	protected override int _layerMask {
 		get { return (1 << Game.c_layerIceberg) + (1 << Game.c_layerCreature); }	// Note: because Player can actually walk on monsters
@@ -109,7 +117,18 @@ public class Player : CreatureBase {
 	}
 	
 	protected override void _Move() {
-		base._Move();
+		// fall determination
+		if( m_state == State.Walking ) {
+			if( m_isInContact != m_wasInContact ) {
+				var hasIceUnder = false;	// TODO: check below! If there's ground - we don't initiate fall sequence
+				if( !m_isInContact && !hasIceUnder ) {
+					_StartFalling();
+				}
+			}
+			
+			m_wasInContact = m_isInContact;
+			m_climbPosition = transform.position;
+		}
 		
 		// TODO: plug in animations
 		
@@ -120,6 +139,8 @@ public class Player : CreatureBase {
 				_SetMoveDirection( Vector3.zero );
 			}
 		}
+		
+		base._Move();
 	}
 	
 	private void _ProcessActions( CastResult castResult ) {
@@ -163,6 +184,14 @@ public class Player : CreatureBase {
 				// Note: Attack ended
 				_AttackLanded();
 				m_state = State.Walking;
+			}
+		}
+		
+		if( m_state == State.Falling ) {
+			var verticalDiff = (m_climbPosition - transform.position).y;
+			Draw.Cross( m_climbPosition, Palette.violet );
+			if( verticalDiff >= 1.5f ) {	// TODO: change to a "player height" constant
+				_StartClimbing();
 			}
 		}
 	}
@@ -241,6 +270,16 @@ public class Player : CreatureBase {
 		if( m_iceberg != null ) {
 			m_iceberg.Split( cut.Item1, cut.Item2 );
 		}
+	}
+	
+	private void _StartFalling() {
+		m_state = State.Falling;
+		
+		m_climbPosition = (transform.position - m_climbPosition).WithY( 0f ).normalized *c_climbDistance;
+	}
+	
+	private void _StartClimbing() {
+		
 	}
 	
 	private void _SyncUI() {

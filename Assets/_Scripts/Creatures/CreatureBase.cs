@@ -16,7 +16,7 @@ public abstract class CreatureBase : IcebergEntity {
 	[SerializeField] private int m_historyDepth = 35;
 	
 	private Queue<Vector2> m_positionsHistory = new Queue<Vector2>();
-	private bool m_isInContact;
+	protected bool m_isInContact;
 	private Vector3 m_moveDirection;
 	
 	private Rigidbody m_rigid;
@@ -76,29 +76,6 @@ public abstract class CreatureBase : IcebergEntity {
 			var vertical = Vector3.Project( _rigidbody.velocity, Vector3.up );
 			_rigidbody.AddForce( -vertical, ForceMode.VelocityChange );
 			transform.position = transform.position.WithY( hit.point.y );
-			
-			/*
-			var vertical = Vector3.Project( _rigidbody.velocity, Vector3.up );
-			vertical += Physics.gravity *Time.fixedDeltaTime;
-			
-			var idealPosition = hit.point;
-			var diff = (transform.position + vertical) - idealPosition;
-			diff = Vector3.Project( diff, Vector3.up );
-			
-			_rigidbody.AddForce( -diff, ForceMode.VelocityChange );
-			*/
-			
-			/*
-			if( !IsAlive ) {
-				pushout = Vector3.zero;
-				vertical = Vector3.zero;
-			}
-			
-			s_maxPushout = Mathf.Max( s_maxPushout, pushout.magnitude );
-			
-			_rigidbody.AddForce( -vertical, ForceMode.VelocityChange );
-			_rigidbody.AddForce( pushout, ForceMode.Acceleration );
-			*/
 			m_isInContact = true;
 		}
 		else {
