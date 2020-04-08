@@ -27,8 +27,6 @@ public class WalkIndicator : MonoBehaviour {
 			
 			m_visual.rotation = roll *m_visual.rotation;
 			m_visual.localPosition = Vector3.up *m_radius;
-			
-			Draw.Ray( transform.position, tangent, Palette.darkLime, 0.5f );
 		}
 		
 		m_previousPosition = transform.position;

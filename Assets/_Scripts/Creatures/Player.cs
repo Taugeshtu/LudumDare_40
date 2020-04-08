@@ -7,7 +7,8 @@ using Random = UnityEngine.Random;
 public class Player : CreatureBase {
 	private const float c_moveTrimStartTime = 0.3f;
 	private const float c_moveTrimDuration = 0.5f;
-	private const float c_climbDistance = 5f;
+	private const float c_climbDistance = 1f;
+	private const float c_playerHeight = 1.5f;
 	
 	private enum State {
 		Walking,
@@ -61,6 +62,7 @@ public class Player : CreatureBase {
 	
 	private bool m_wasInContact = false;
 	private Vector3 m_climbPosition;
+	private Vector3 m_climbStart;
 	
 	protected override int _layerMask {
 		get { return (1 << Game.c_layerIceberg) + (1 << Game.c_layerCreature); }	// Note: because Player can actually walk on monsters
@@ -120,14 +122,20 @@ public class Player : CreatureBase {
 		// fall determination
 		if( m_state == State.Walking ) {
 			if( m_isInContact != m_wasInContact ) {
-				var hasIceUnder = false;	// TODO: check below! If there's ground - we don't initiate fall sequence
-				if( !m_isInContact && !hasIceUnder ) {
+				var ray = new Ray( transform.position, Vector3.down );
+				var castResult = _Cast( ray );
+				
+				if( !m_isInContact && !castResult.IcebergPoint.HasValue ) {
 					_StartFalling();
 				}
 			}
 			
 			m_wasInContact = m_isInContact;
-			m_climbPosition = transform.position;
+		}
+		
+		// climbing motion
+		if( m_state == State.Climbing ) {
+			_ClimbMove();
 		}
 		
 		// TODO: plug in animations
@@ -155,7 +163,7 @@ public class Player : CreatureBase {
 		
 		if( m_state == State.Walking ) {
 			if( splitKeyPressed && m_canSplit ) {
-				_StartSplit();
+				_ChargeSplit();
 			}
 			
 			// TODO: will have to rework that, since it doesn't play well with Diablo-movement
@@ -170,7 +178,7 @@ public class Player : CreatureBase {
 			if( m_state == State.ChargingSplit ) {
 				if( splitKeyPressed ) {
 					m_canSplit = false;
-					_LandSplit();
+					_StartSplit();
 				}
 				else {
 					m_state = State.Walking;
@@ -185,12 +193,14 @@ public class Player : CreatureBase {
 				_AttackLanded();
 				m_state = State.Walking;
 			}
+			else if( m_state == State.Climbing ) {
+				m_state = State.Walking;
+			}
 		}
 		
 		if( m_state == State.Falling ) {
 			var verticalDiff = (m_climbPosition - transform.position).y;
-			Draw.Cross( m_climbPosition, Palette.violet );
-			if( verticalDiff >= 1.5f ) {	// TODO: change to a "player height" constant
+			if( verticalDiff >= c_playerHeight ) {
 				_StartClimbing();
 			}
 		}
@@ -248,13 +258,13 @@ public class Player : CreatureBase {
 		CameraShake.MakeAShake( false );
 	}
 	
-	private void _StartSplit() {
+	private void _ChargeSplit() {
 		m_state = State.ChargingSplit;
 		m_stateTimer = Time.time + TimingManager.ChargeTime;
 		m_skeletool.Enqueue( "Split1", m_splitCurve, TimingManager.ChargeTime );
 	}
 	
-	private void _LandSplit() {
+	private void _StartSplit() {
 		m_state = State.LandingSplit;
 		m_stateTimer = Time.time + TimingManager.SplitTime;
 		
@@ -274,12 +284,50 @@ public class Player : CreatureBase {
 	
 	private void _StartFalling() {
 		m_state = State.Falling;
+		m_motionTarget = null;
+		_SetMoveDirection( Vector3.zero );
 		
-		m_climbPosition = (transform.position - m_climbPosition).WithY( 0f ).normalized *c_climbDistance;
+		var flatBackNormal = (-m_lastHit.normal).WithY( 0f ).normalized;
+		m_climbPosition = transform.position + flatBackNormal *c_climbDistance;
+		
+		var ray = new Ray( m_climbPosition + Vector3.up *3, Vector3.down );
+		var castResult = _Cast( ray );
+		
+		if( castResult.IcebergPoint.HasValue ) {
+			m_climbPosition = castResult.IcebergPoint.Value;
+		}
 	}
 	
 	private void _StartClimbing() {
+		m_state = State.Climbing;
+		m_stateTimer = Time.time + TimingManager.ClimbTime;
 		
+		m_climbStart = transform.position;
+	}
+	
+	private void _ClimbMove() {
+		var diff = (m_climbPosition - m_climbStart);
+		var verticalComponent = diff.ProjectedOn( Vector3.up );
+		var flatComponent = diff.Flat( Vector3.up );
+		var totalTravelLength = verticalComponent.magnitude + flatComponent.magnitude;
+		
+		var breakPoint = verticalComponent.magnitude /totalTravelLength;
+		
+		var timeFactor = 1f - (m_stateTimer - Time.time) /TimingManager.ClimbTime;
+		if( timeFactor < breakPoint ) {
+			var localFactor = Mathf.InverseLerp( 0f, breakPoint, timeFactor );
+			transform.position = Vector3.Lerp( m_climbStart, m_climbStart + verticalComponent, localFactor );
+			
+			Debug.LogError( "Climbing vertical, local factor: "+localFactor );
+			Draw.RayFromToCross( m_climbStart, m_climbStart + verticalComponent, Palette.red, 0.5f );
+		}
+		else {
+			var localFactor = Mathf.InverseLerp( breakPoint, 1f, timeFactor );
+			transform.position = Vector3.Lerp( m_climbStart + verticalComponent, m_climbPosition, localFactor );
+			
+			Debug.LogError( "Climbing horizontal, local factor: "+localFactor );
+			Draw.RayFromToCross( m_climbStart + verticalComponent, m_climbPosition, Palette.blue, 0.5f );
+		}
 	}
 	
 	private void _SyncUI() {
@@ -304,14 +352,14 @@ public class Player : CreatureBase {
 	
 	
 #region Utility
-	private CastResult _Cast( Ray ray ) {
+	private CastResult _Cast( Ray ray, float distance = 100f ) {
 		var result = new CastResult();
 		
 		var plane = new Plane( Vector3.up, transform.position );
 		result.PlanePoint = plane.Cast( ray );
 		
 		var castMask = (1 << Game.c_layerIceberg) + (1 << Game.c_layerCreature);
-		var hits = Physics.RaycastAll( ray, 100f, castMask );
+		var hits = Physics.RaycastAll( ray, distance, castMask );
 		foreach( var hit in hits ) {
 			var iceberg = hit.collider.GetComponent<Iceberg>();
 			var monster = hit.collider.GetComponent<Monster>();

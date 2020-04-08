@@ -17,6 +17,7 @@ public abstract class CreatureBase : IcebergEntity {
 	
 	private Queue<Vector2> m_positionsHistory = new Queue<Vector2>();
 	protected bool m_isInContact;
+	protected RaycastHit m_lastHit;
 	private Vector3 m_moveDirection;
 	
 	private Rigidbody m_rigid;
@@ -68,7 +69,6 @@ public abstract class CreatureBase : IcebergEntity {
 #region Private
 	private void _Pushout() {
 		m_isInContact = false;
-		m_shouldDraw = true;
 		
 		RaycastHit hit;
 		var ray = new Ray( transform.position + transform.up *m_castDepth, -transform.up );
@@ -77,6 +77,7 @@ public abstract class CreatureBase : IcebergEntity {
 			_rigidbody.AddForce( -vertical, ForceMode.VelocityChange );
 			transform.position = transform.position.WithY( hit.point.y );
 			m_isInContact = true;
+			m_lastHit = hit;
 		}
 		else {
 			if( IsAlive ) {
@@ -99,7 +100,7 @@ public abstract class CreatureBase : IcebergEntity {
 	}
 	
 	private void _ReachNewVelocity( Vector3 newVelocity ) {
-		var current = _rigidbody.velocity.XZ().X0Y();
+		var current = _rigidbody.velocity.WithY( 0f );
 		newVelocity *= m_speed;
 		
 		var isAccelerating = (newVelocity.magnitude > current.magnitude);
