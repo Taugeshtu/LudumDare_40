@@ -51,7 +51,7 @@ public class Monster : AICreature {
 				
 				if( m_hunger == 0 ) {
 					m_state = State.Fed;
-					m_targetPosition = Random.onUnitSphere.XZ().X0Y() *m_iceberg.Mesh.Target.mesh.bounds.size.magnitude *2;
+					m_targetPosition = Random.onUnitSphere.XZ().X0Y() *Iceberg.Mesh.Target.mesh.bounds.size.magnitude *2;
 				}
 			}
 		}
@@ -71,7 +71,7 @@ public class Monster : AICreature {
 	
 	private void _PickVictim() {
 		var minValue = float.MaxValue;
-		foreach( var pengu in m_iceberg.Penguins ) {
+		foreach( var pengu in Iceberg.Penguins ) {
 			if( pengu.IsAlive ) {
 				var penguValue = pengu.Value *Vector3.Distance( Position, pengu.Position );
 				penguValue = 1f /penguValue;

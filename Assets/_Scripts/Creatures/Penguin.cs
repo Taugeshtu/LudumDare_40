@@ -44,8 +44,8 @@ public class Penguin : AICreature {
 		if( Dice.Roll( moveChance ) ) {
 			m_state = State.Move;
 			
-			m_targetPosition = m_iceberg.RandomOnIce();
-			m_targetPosition = m_iceberg.transform.InverseTransformPoint( m_targetPosition );
+			m_targetPosition = Iceberg.RandomOnIce();
+			m_targetPosition = Iceberg.transform.InverseTransformPoint( m_targetPosition );
 		}
 		else if( Dice.Roll( idleChance ) ) {
 			m_state = State.Idle;
@@ -57,7 +57,7 @@ public class Penguin : AICreature {
 	
 	private void _UpdateValue() {
 		var newValue = 1f;
-		foreach( var pengu in m_iceberg.Penguins ) {
+		foreach( var pengu in Iceberg.Penguins ) {
 			if( pengu == this ) {
 				continue;
 			}
@@ -67,8 +67,8 @@ public class Penguin : AICreature {
 			}
 		}
 		
-		if( m_iceberg.Player != null ) {
-			if( Vector3.Distance( transform.position, m_iceberg.Player.Position ) < s_herdRadius *2 ) {
+		if( Iceberg.Player != null ) {
+			if( Vector3.Distance( transform.position, Iceberg.Player.Position ) < s_herdRadius *2 ) {
 				newValue += 10;
 			}
 		}
@@ -137,7 +137,7 @@ public class Penguin : AICreature {
 	private List<Monster> _GetMonsters() {
 		var result = new List<Monster>();
 		
-		foreach( var monster in m_iceberg.Monsters ) {
+		foreach( var monster in Iceberg.Monsters ) {
 			if( monster.IsAlive ) {
 				if( Vector3.Distance( Position, monster.Position ) < s_monsterAvoidRedius ) {
 					result.Add( monster );
@@ -151,7 +151,7 @@ public class Penguin : AICreature {
 	private List<CreatureBase> _GetFlock() {
 		var result = new List<CreatureBase>();
 		
-		foreach( var pengu in m_iceberg.Penguins ) {
+		foreach( var pengu in Iceberg.Penguins ) {
 			if( pengu.IsAlive && pengu != this ) {
 				if( Vector3.Distance( Position, pengu.Position ) < s_detectionRedius ) {
 					result.Add( pengu );

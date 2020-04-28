@@ -277,8 +277,8 @@ public class Player : CreatureBase {
 		m_skeletool.GoIdle( m_splitCurve2, TimingManager.SplitTime /2 );
 		
 		var cut = _GetCut();
-		if( m_iceberg != null ) {
-			m_iceberg.Split( cut.Item1, cut.Item2 );
+		if( Iceberg != null ) {
+			Iceberg.Split( cut.Item1, cut.Item2 );
 		}
 	}
 	
