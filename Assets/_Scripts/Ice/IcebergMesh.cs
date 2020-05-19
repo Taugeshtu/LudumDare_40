@@ -23,6 +23,13 @@ public class IcebergMesh : MorphMesh {
 		
 		m_topVertexIndex = m_positions.Count - 1;
 		m_topTriangleIndex = (m_indeces.Count /3) - 1;
+		
+		
+		MergeVertices();
+		_RegenerateSkirt();
+		UnweldVertices();
+		ClearDeadTriangles();
+		ClearDeadVertices();
 	}
 	
 	public IcebergMesh( Component mainTarget, Component skirtTarget, Vector3 skirtNormal ) : base( mainTarget ) {

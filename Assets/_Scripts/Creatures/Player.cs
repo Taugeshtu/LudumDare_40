@@ -151,6 +151,12 @@ public class Player : CreatureBase {
 		base._Move();
 	}
 	
+	protected override void _ChangeIceberg( Iceberg newIceberg ) {
+		newIceberg.TransferDrift( Iceberg );
+		
+		base._ChangeIceberg( newIceberg );
+	}
+	
 	private void _ProcessActions( CastResult castResult ) {
 		var attackKeyPressed = _primaryKeyPressed;
 		var splitKeyPressed = _secondaryKeyPressed;

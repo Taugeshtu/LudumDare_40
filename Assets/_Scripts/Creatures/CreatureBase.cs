@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 
 public abstract class CreatureBase : IcebergEntity {
+	private static RaycastHit[] s_hits = new RaycastHit[5];
+	
 	[Header( "Movement" )]
 	[SerializeField] protected float m_speed = 4f;
 	[SerializeField] protected float m_acceleration = 0.5f;
@@ -15,7 +17,7 @@ public abstract class CreatureBase : IcebergEntity {
 	[SerializeField] private bool m_shouldDraw = false;
 	[SerializeField] private int m_historyDepth = 35;
 	
-	private Queue<Vector2> m_positionsHistory = new Queue<Vector2>();
+	protected Queue<Vector2> m_positionsHistory = new Queue<Vector2>();
 	protected bool m_isInContact;
 	protected RaycastHit m_lastHit;
 	private Vector3 m_moveDirection;
@@ -29,6 +31,9 @@ public abstract class CreatureBase : IcebergEntity {
 	}
 	
 	protected abstract int _layerMask { get; }
+	private int _icebergMask {
+		get { return (1 << Game.c_layerIceberg); }
+	}
 	
 	public bool IsAlive { get; private set; }
 	public Vector3 MoveDirection { get { return m_moveDirection; } }
@@ -40,7 +45,7 @@ public abstract class CreatureBase : IcebergEntity {
 	
 	void FixedUpdate() {
 		_Move();
-		_Pushout();
+		_ProcessContact();
 		
 		var flatVelocity = _rigidbody.velocity.XZ();
 		if( flatVelocity.magnitude > (m_speed /2) ) {
@@ -66,17 +71,26 @@ public abstract class CreatureBase : IcebergEntity {
 	
 	
 #region Private
-	private void _Pushout() {
+	private void _ProcessContact() {
 		m_isInContact = false;
 		
-		RaycastHit hit;
 		var ray = new Ray( transform.position + transform.up *m_castDepth, -transform.up );
-		if( Physics.SphereCast( ray, m_castRadius, out hit, m_castDepth, _layerMask ) ) {
+		var hitsCount = Physics.SphereCastNonAlloc( ray, m_castRadius, s_hits, m_castDepth, _layerMask );
+		if( hitsCount > 0 ) {
+			var closestHit = _GetClosestHit( ray, s_hits, hitsCount );
+			var icebergHit = (_layerMask == _icebergMask) ? closestHit : _GetIcebergHit( ray, s_hits, hitsCount );
+			
 			var vertical = Vector3.Project( _rigidbody.velocity, Vector3.up );
 			_rigidbody.AddForce( -vertical, ForceMode.VelocityChange );
-			transform.position = transform.position.WithY( hit.point.y );
+			transform.position = transform.position.WithY( closestHit.point.y );
+			
 			m_isInContact = true;
-			m_lastHit = hit;
+			m_lastHit = closestHit;
+			
+			var newIceberg = icebergHit.collider.GetComponentInParent<Iceberg>();
+			if( newIceberg != Iceberg ) {
+				_ChangeIceberg( newIceberg );
+			}
 		}
 		else {
 			if( IsAlive ) {
@@ -135,9 +149,42 @@ public abstract class CreatureBase : IcebergEntity {
 	protected void _SetMoveDirection( Vector3 direction ) {
 		m_moveDirection = direction;
 	}
+	
+	protected virtual void _ChangeIceberg( Iceberg newIceberg ) {
+		Iceberg.RemoveEntity( this );
+		newIceberg.AddEntity( this );
+	}
 #endregion
 	
 	
-#region Temporary
+#region Utility
+	private static RaycastHit _GetClosestHit( Ray ray, RaycastHit[] hits, int hitsCount ) {
+		// this seems worthwhile, because most creatures are penguins, casting only over ice and hitting once:
+		if( hitsCount == 1 ) { return hits[0]; }
+		
+		var minDistance = float.MaxValue;
+		var result = new RaycastHit();
+		for( var i = 0; i < hitsCount; i++ ) {
+			var hit = hits[i];
+			
+			var distance = (ray.origin - hit.point).sqrMagnitude;
+			if( distance < minDistance ) {
+				minDistance = distance;
+				result = hit;
+			}
+		}
+		return result;
+	}
+	
+	private static RaycastHit _GetIcebergHit( Ray ray, RaycastHit[] hits, int hitsCount ) {
+		for( var i = 0; i < hitsCount; i++ ) {
+			var hit = hits[i];
+			
+			if( hit.collider.gameObject.layer == Game.c_layerIceberg ) {
+				return hit;
+			}
+		}
+		return new RaycastHit();
+	}
 #endregion
 }

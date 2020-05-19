@@ -71,9 +71,9 @@ public class Iceberg : MonoBehaviour {
 		else if( entity is Monster ) { m_monsters.Add( entity as Monster ); }
 	}
 	
-	public void TransferEntity( IcebergEntity entity, Iceberg target ) {
+	public void RemoveEntity( IcebergEntity entity ) {
 		if( entity == null ) {
-			Debug.LogWarning( "This shouldn't happen. Trying to add null entity to Iceberg!", gameObject );
+			Debug.LogWarning( "This shouldn't happen. Trying to remove null entity from Iceberg!", gameObject );
 			return;
 		}
 		
@@ -82,8 +82,6 @@ public class Iceberg : MonoBehaviour {
 		if( entity is Player ) { Player = null; }
 		else if( entity is Penguin ) { m_penguins.Remove( entity as Penguin ); }
 		else if( entity is Monster ) { m_monsters.Remove( entity as Monster ); }
-		
-		target.AddEntity( entity );
 	}
 	
 	public void SpawnPenguins( int count ) {
@@ -117,36 +115,25 @@ public class Iceberg : MonoBehaviour {
 		var driftMesh = Mesh.Split( position, direction );
 		Mesh.Write();
 		
-		/*
 		var newIceberg = IceGenerator.SpawnSplit( driftMesh, pivotPosition );
-		newIceberg.Mesh.RegenerateSkirt();
 		newIceberg.Mesh.Write();
 		newIceberg.SetAdrift( drift, Random.Range( -5f, 5f ) );
-		*/
-		
-		var shift = Vector3.Project( position, direction );
-		var plane = new Plane( shift, -shift.magnitude );
-		var inverted = false;
-		if( Vector3.Angle( shift, direction ) > 90 ) {	// Meaning we're beyond zer0
-			inverted = true;
-		}
-		
-		var entitiesLeaving = new List<IcebergEntity>();
-		foreach( var entity in m_entities ) {
-			if( plane.GetSide( entity.transform.position, inverted ) ) {
-				entitiesLeaving.Add( entity );
-			}
-		}
-		
-		foreach( var entity in entitiesLeaving ) {
-			// TransferEntity( entity, newIceberg );
-		}
 	}
 	
 	public void SetAdrift( Vector3 drift, float turnSpeed ) {
 		m_drift = drift;
 		m_driftStartTime = Time.time + m_driftDelay;
 		m_turnSpeed = turnSpeed;
+	}
+	
+	public void TransferDrift( Iceberg target ) {
+		target.m_driftStartTime = m_driftStartTime;
+		target.m_turnSpeed = -m_turnSpeed;
+		target.m_drift = -m_drift;
+		
+		m_drift = Vector3.zero;
+		m_driftStartTime = 0;
+		m_turnSpeed = 0;
 	}
 	
 	public Vector3 RandomOnIce() {
