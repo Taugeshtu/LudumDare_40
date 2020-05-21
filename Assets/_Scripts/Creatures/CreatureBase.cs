@@ -17,7 +17,8 @@ public abstract class CreatureBase : IcebergEntity {
 	[SerializeField] private bool m_shouldDraw = false;
 	[SerializeField] private int m_historyDepth = 35;
 	
-	protected Queue<Vector2> m_positionsHistory = new Queue<Vector2>();
+	private Vector3 m_lastRecordedPosition;
+	protected Queue<Vector3> m_positionsHistory = new Queue<Vector3>();
 	protected bool m_isInContact;
 	protected RaycastHit m_lastHit;
 	private Vector3 m_moveDirection;
@@ -47,9 +48,15 @@ public abstract class CreatureBase : IcebergEntity {
 		_Move();
 		_ProcessContact();
 		
-		var flatVelocity = _rigidbody.velocity.XZ();
-		if( flatVelocity.magnitude > (m_speed /2) ) {
-			m_positionsHistory.Enqueue( flatVelocity );
+		if( m_positionsHistory.Count == 0 ) {
+			m_positionsHistory.Enqueue( transform.position );
+			m_lastRecordedPosition = transform.position;
+		}
+		else {
+			if( (transform.position - m_lastRecordedPosition).magnitude > 0.25f ) {
+				m_positionsHistory.Enqueue( transform.position );
+				m_lastRecordedPosition = transform.position;
+			}
 		}
 		
 		if( m_positionsHistory.Count > m_historyDepth ) {
@@ -100,10 +107,17 @@ public abstract class CreatureBase : IcebergEntity {
 	}
 	
 	private void _UpdateTurn() {
-		var history = new List<Vector2>( m_positionsHistory );
 		var totalDiff = Vector2.zero;
-		for( var i = 0; i < history.Count; i++ ) {
-			totalDiff += history[i] *i;
+		var index = 0;
+		var previous = Vector3.zero;
+		foreach( var position in m_positionsHistory ) {
+			if( index != 0 ) {
+				var diff = position - previous;
+				totalDiff += diff.XZ() * index;	// TODO: investigate WHYYYY is it scaled by depth?..
+			}
+			
+			index += 1;
+			previous = position;
 		}
 		
 		if( totalDiff.magnitude > 0.01f ) {

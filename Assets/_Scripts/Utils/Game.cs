@@ -55,7 +55,7 @@ public class Game : MonoSingular<Game> {
 	
 	private GameState m_state = GameState.NotReady;
 	private float m_gameStartTime;
-	private Iceberg m_playerIceberg;
+	private Iceberg m_playerIceberg;	// TODO: switch it to a dynamic link
 	
 	private float m_currentValue;
 	

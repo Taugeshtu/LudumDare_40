@@ -91,6 +91,20 @@ public class Player : CreatureBase {
 		
 		_SyncUI();
 	}
+	
+	void OnDrawGizmos() {
+		var index = 0;
+		var previous = Vector3.zero;
+		
+		foreach( var position in m_positionsHistory ) {
+			if( index != 0 ) {
+				Draw.RayFromTo( previous, position, Palette.darkYellow );
+			}
+			
+			index += 1;
+			previous = position;
+		}
+	}
 #endregion
 	
 	
