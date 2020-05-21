@@ -69,7 +69,7 @@ public class IceGenerator : MonoSingular<IceGenerator> {
 		var iceberg = pivotObject.AddComponent<Iceberg>();
 		iceberg.Ignite( mesh );
 		
-		s_Instance.StartCoroutine( s_Instance._KillerRoutine( iceberg ) );
+		s_Instance.StartCoroutine( s_Instance._KillerRoutine( iceberg ) );	// TODO: rework iceberg kill mechanism, considering we can jump!
 		return iceberg;
 	}
 #endregion

@@ -68,16 +68,6 @@ public class Game : MonoSingular<Game> {
 	public static Monster MonsterPrefab { get { return s_Instance.m_monsterPrefab; } }
 	
 #region Implementation
-	private void _ToggleUI() {
-		if( (m_menuRoot == null) || (m_gameProgressRoot == null) || (m_resultsRoot == null) ) {
-			return;
-		}
-		
-		m_menuRoot.SetActive( m_state == GameState.Menu );
-		m_gameProgressRoot.gameObject.SetActive( m_state == GameState.InGame );
-		m_resultsRoot.SetActive( m_state == GameState.Results );
-	}
-	
 	void Awake() {
 		if( m_seed >= 0 ) {
 			Random.InitState( m_seed );
@@ -112,11 +102,33 @@ public class Game : MonoSingular<Game> {
 			}
 		}
 	}
+#endregion
+	
+	
+#region Public
+	public void StartGame() {
+		m_player.transform.SetParent( null );
+		
+		if( m_playerIceberg != null ) {
+			Destroy( m_playerIceberg.gameObject );
+		}
+		
+		m_playerIceberg = IceGenerator.GenerateNew( m_iceIterations );
+		if( m_player != null ) {
+			m_playerIceberg.AddEntity( m_player );
+		}
+		
+		StopAllCoroutines();
+		StartCoroutine( _DelayedStart() );
+	}
 	
 	public void Exit() {
 		Application.Quit();
 	}
+#endregion
 	
+	
+#region Private
 	private void _GoMenu() {
 		m_state = GameState.Menu;
 		_ToggleUI();
@@ -146,29 +158,7 @@ public class Game : MonoSingular<Game> {
 		yield return new WaitForSeconds( 5 );
 		_GoMenu();
 	}
-#endregion
 	
-	
-#region Public
-	public void StartGame() {
-		m_player.transform.SetParent( null );
-		
-		if( m_playerIceberg != null ) {
-			Destroy( m_playerIceberg.gameObject );
-		}
-		
-		m_playerIceberg = IceGenerator.GenerateNew( m_iceIterations );
-		if( m_player != null ) {
-			m_playerIceberg.AddEntity( m_player );
-		}
-		
-		StopAllCoroutines();
-		StartCoroutine( _DelayedStart() );
-	}
-#endregion
-	
-	
-#region Private
 	private IEnumerator _DelayedStart() {
 		yield return new WaitForSeconds( 0.3f );
 		m_gameStartTime = Time.time;
@@ -186,17 +176,14 @@ public class Game : MonoSingular<Game> {
 		}
 	}
 	
-	private void _DebugPace() {
-		var last = 0f;
-		var xScale = m_minorsCount /60f;
-		for( var i = 0; i < m_majorPaceLoop; i++ ) {
-			var pace = _GetPace( i );
-			
-			var p1 = Vector3.right *xScale *(i - 1) + Vector3.up *last + Vector3.up *10;
-			var p2 = Vector3.right *xScale *(i) + Vector3.up *pace + Vector3.up *10;
-			last = pace;
-			Draw.Line( p1, p2, Palette.yellow, 5 );
+	private void _ToggleUI() {
+		if( (m_menuRoot == null) || (m_gameProgressRoot == null) || (m_resultsRoot == null) ) {
+			return;
 		}
+		
+		m_menuRoot.SetActive( m_state == GameState.Menu );
+		m_gameProgressRoot.gameObject.SetActive( m_state == GameState.InGame );
+		m_resultsRoot.SetActive( m_state == GameState.Results );
 	}
 	
 	private float _GetPace( float time ) {
@@ -260,5 +247,17 @@ public class Game : MonoSingular<Game> {
 	
 	
 #region Temporary
+	private void _DebugPace() {
+		var last = 0f;
+		var xScale = m_minorsCount /60f;
+		for( var i = 0; i < m_majorPaceLoop; i++ ) {
+			var pace = _GetPace( i );
+			
+			var p1 = Vector3.right *xScale *(i - 1) + Vector3.up *last + Vector3.up *10;
+			var p2 = Vector3.right *xScale *(i) + Vector3.up *pace + Vector3.up *10;
+			last = pace;
+			Draw.Line( p1, p2, Palette.yellow, 5 );
+		}
+	}
 #endregion
 }
