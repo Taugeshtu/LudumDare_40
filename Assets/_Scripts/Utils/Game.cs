@@ -55,7 +55,7 @@ public class Game : MonoSingular<Game> {
 	
 	private GameState m_state = GameState.NotReady;
 	private float m_gameStartTime;
-	private Iceberg m_playerIceberg;	// TODO: switch it to a dynamic link
+	private static List<Iceberg> s_icebergs = new List<Iceberg>();
 	
 	private float m_currentValue;
 	
@@ -109,17 +109,26 @@ public class Game : MonoSingular<Game> {
 	public void StartGame() {
 		m_player.transform.SetParent( null );
 		
-		if( m_playerIceberg != null ) {
-			Destroy( m_playerIceberg.gameObject );
+		foreach( var iceberg in s_icebergs ) {
+			Destroy( iceberg.gameObject );
 		}
+		s_icebergs.Clear();
 		
-		m_playerIceberg = IceGenerator.GenerateNew( m_iceIterations );
-		if( m_player != null ) {
-			m_playerIceberg.AddEntity( m_player );
-		}
+		var newIceberg = IceGenerator.GenerateNew( m_iceIterations );
+		newIceberg.AddEntity( m_player );
+		RegisterIceberg( newIceberg );
 		
 		StopAllCoroutines();
-		StartCoroutine( _DelayedStart() );
+		StartCoroutine( _DelayedStart( newIceberg ) );
+	}
+	
+	public static void RegisterIceberg( Iceberg iceberg ) {
+		s_icebergs.Add( iceberg );
+	}
+	
+	public static void DestroyIceberg( Iceberg iceberg ) {
+		s_icebergs.Remove( iceberg );
+		Destroy( iceberg.gameObject );
 	}
 	
 	public void Exit() {
@@ -159,7 +168,7 @@ public class Game : MonoSingular<Game> {
 		_GoMenu();
 	}
 	
-	private IEnumerator _DelayedStart() {
+	private IEnumerator _DelayedStart( Iceberg startIceberg ) {
 		yield return new WaitForSeconds( 0.3f );
 		m_gameStartTime = Time.time;
 		m_state = GameState.InGame;
@@ -170,7 +179,7 @@ public class Game : MonoSingular<Game> {
 		m_penguinsSpawned = Random.Range( m_populationSize.x, m_populationSize.y );
 		Debug.Log( "Settled on "+m_penguinsSpawned+" penguins" );
 		for( var i = 0; i < m_penguinsSpawned; i++ ) {
-			m_playerIceberg.SpawnPenguins( 1 );
+			startIceberg.SpawnPenguins( 1 );
 			yield return new WaitForEndOfFrame();
 			yield return new WaitForEndOfFrame();
 		}

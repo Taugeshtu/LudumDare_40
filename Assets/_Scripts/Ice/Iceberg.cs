@@ -118,6 +118,7 @@ public class Iceberg : MonoBehaviour {
 		var newIceberg = IceGenerator.SpawnSplit( driftMesh, pivotPosition );
 		newIceberg.Mesh.Write();
 		newIceberg.SetAdrift( drift, Random.Range( -5f, 5f ) );
+		Game.RegisterIceberg( newIceberg );
 	}
 	
 	public void SetAdrift( Vector3 drift, float turnSpeed ) {
