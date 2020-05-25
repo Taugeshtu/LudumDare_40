@@ -64,6 +64,16 @@ public class Game : MonoSingular<Game> {
 	private float _timeRunning { get { return (Time.time - m_gameStartTime); } }
 	private float _progress { get { return _timeRunning/m_majorPaceLoop; } }
 	
+	public static Player Player {
+		get {
+			if( s_Instance == null ) {
+				return Extensions.FindInstance<Player>( false );
+			}
+			
+			return s_Instance.m_player;
+		}
+	}
+	
 	public static Penguin PenguinPrefab { get { return s_Instance.m_penguinPrefab; } }
 	public static Monster MonsterPrefab { get { return s_Instance.m_monsterPrefab; } }
 	

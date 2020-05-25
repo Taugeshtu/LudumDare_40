@@ -23,6 +23,12 @@ public class Iceberg : MonoBehaviour {
 	public Player Player { get; private set; }
 	
 #region Implementation
+	void Update() {
+		if( Player == null ) {
+			_CheckDestroy();
+		}
+	}
+	
 	void FixedUpdate() {
 		if( Time.time > m_driftStartTime ) {
 			_ProcessDrift();
@@ -159,6 +165,12 @@ public class Iceberg : MonoBehaviour {
 		
 		return result;
 	}
+	
+	public float Distance( Iceberg other ) {
+		var boundsA = Mesh.Target.GetComponent<MeshRenderer>().bounds;
+		var boundsB = other.Mesh.Target.GetComponent<MeshRenderer>().bounds;
+		return boundsA.Distance( boundsB );
+	}
 #endregion
 	
 	
@@ -201,6 +213,17 @@ public class Iceberg : MonoBehaviour {
 		
 		transform.position += m_velocity *Time.fixedDeltaTime;
 		transform.rotation *= Quaternion.AngleAxis( m_turnSpeed *Time.fixedDeltaTime, Vector3.up );
+	}
+	
+	private void _CheckDestroy() {
+		if( Game.Player == null ) {
+			return;
+		}
+		
+		var distanceToPlayerIceberg = Game.Player.Iceberg.Distance( this );
+		if( distanceToPlayerIceberg > 50f ) {
+			Game.DestroyIceberg( this );
+		}
 	}
 #endregion
 	
