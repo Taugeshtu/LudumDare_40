@@ -221,7 +221,7 @@ public class Game : MonoSingular<Game> {
 		}
 		
 		var monstersAlive = 0;
-		foreach( var monster in m_playerIceberg.Monsters ) {
+		foreach( var monster in m_player.Iceberg.Monsters ) {
 			if( monster.AliveAndActive ) {
 				monstersAlive += 1;
 			}
@@ -248,7 +248,7 @@ public class Game : MonoSingular<Game> {
 		}
 		
 		for( var i = 0; i < monstersToSpawn; i++ ) {
-			m_playerIceberg.SpawnMonster();
+			m_player.Iceberg.SpawnMonster();
 			m_currentValue += m_monsterValue;
 		}
 	}

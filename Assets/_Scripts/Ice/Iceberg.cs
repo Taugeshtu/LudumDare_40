@@ -7,7 +7,7 @@ public class Iceberg : MonoBehaviour {
 	private Vector3 m_drift;
 	private float m_driftDelay = 0.7f;
 	private float m_driftBuildupTime = 2f;
-	private float m_driftStartTime = 1f;
+	private float m_driftStartTime = float.MaxValue;
 	
 	private Vector3 m_velocity;
 	private float m_maxSpeed = 2f;
@@ -133,7 +133,7 @@ public class Iceberg : MonoBehaviour {
 		target.m_drift = -m_drift;
 		
 		m_drift = Vector3.zero;
-		m_driftStartTime = 0;
+		m_driftStartTime = float.MaxValue;
 		m_turnSpeed = 0;
 	}
 	
