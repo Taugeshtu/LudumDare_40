@@ -52,7 +52,6 @@ public class Player : CreatureBase {
 	
 	private State m_state;
 	private float m_stateTimer;
-	private bool m_canSplit = true;
 	private Monster m_target;
 	private bool m_spawned = false;
 	
@@ -140,7 +139,7 @@ public class Player : CreatureBase {
 				var castResult = _Cast( ray );
 				
 				if( !m_isInContact && !castResult.IcebergPoint.HasValue ) {
-					_StartFalling();
+					_SetState( State.Falling );
 				}
 			}
 			
@@ -175,33 +174,27 @@ public class Player : CreatureBase {
 		var attackKeyPressed = _primaryKeyPressed;
 		var splitKeyPressed = _secondaryKeyPressed;
 		
-		if( m_canSplit == false ) {
-			if( !splitKeyPressed ) {
-				m_canSplit = true;
-			}
-		}
-		
 		if( m_state == State.Walking ) {
-			if( splitKeyPressed && m_canSplit ) {
-				_ChargeSplit();
+			if( splitKeyPressed ) {
+				_SetState( State.ChargingSplit );
 			}
 			
 			// TODO: will have to rework that, since it doesn't play well with Diablo-movement
 			/*
 			if( attackKeyPressed ) {
-				_StartAttack();
+				_SetState( State.Attacking );
 			}
 			*/
+		}
+		
+		if( (m_state == State.ChargingSplit) && !splitKeyPressed ) {
+			m_state = State.Walking;
 		}
 		
 		if( Time.time > m_stateTimer ) {
 			if( m_state == State.ChargingSplit ) {
 				if( splitKeyPressed ) {
-					m_canSplit = false;
-					_StartSplit();
-				}
-				else {
-					m_state = State.Walking;
+					_SetState( State.LandingSplit );
 				}
 			}
 			else if( m_state == State.LandingSplit ) {
@@ -221,7 +214,7 @@ public class Player : CreatureBase {
 		if( m_state == State.Falling ) {
 			var verticalDiff = (m_climbPosition - transform.position).y;
 			if( verticalDiff >= c_playerHeight ) {
-				_StartClimbing();
+				_SetState( State.Climbing );
 			}
 		}
 	}
@@ -261,10 +254,37 @@ public class Player : CreatureBase {
 		}
 	}
 	
-	private void _StartAttack() {
-		m_state = State.Attacking;
-		m_stateTimer = Time.time + TimingManager.AttackTime;
-		m_skeletool.Enqueue( "Attack", m_curve, TimingManager.AttackTime );
+	private void _SetState( State state ) {
+		var stateTime = 0f;
+		switch( state ) {
+			case State.Attacking:
+				stateTime = TimingManager.AttackTime;
+				m_skeletool.Enqueue( "Attack", m_curve, TimingManager.AttackTime );
+				break;
+			case State.ChargingSplit:
+				stateTime = TimingManager.ChargeTime;
+				m_skeletool.Enqueue( "Split1", m_splitCurve, TimingManager.ChargeTime );
+				break;
+			case State.LandingSplit:
+				stateTime = TimingManager.SplitTime;
+				_StartSplit();
+				break;
+			case State.Falling:
+				_StartFalling();
+				break;
+			case State.Climbing:
+				stateTime = TimingManager.ClimbTime;
+				m_climbStart = transform.position;
+				break;
+		}
+		
+		m_state = state;
+		m_stateTimer = Time.time + stateTime;
+		
+		if( state != State.Walking ) {
+			m_motionTarget = null;
+			_SetMoveDirection( Vector3.zero );
+		}
 	}
 	
 	private void _AttackLanded() {
@@ -278,16 +298,7 @@ public class Player : CreatureBase {
 		CameraShake.MakeAShake( false );
 	}
 	
-	private void _ChargeSplit() {
-		m_state = State.ChargingSplit;
-		m_stateTimer = Time.time + TimingManager.ChargeTime;
-		m_skeletool.Enqueue( "Split1", m_splitCurve, TimingManager.ChargeTime );
-	}
-	
 	private void _StartSplit() {
-		m_state = State.LandingSplit;
-		m_stateTimer = Time.time + TimingManager.SplitTime;
-		
 		var clip = m_splitSounds[Random.Range( 0, m_splitSounds.Length )];
 		m_source.PlayOneShot( clip );
 		
@@ -303,10 +314,6 @@ public class Player : CreatureBase {
 	}
 	
 	private void _StartFalling() {
-		m_state = State.Falling;
-		m_motionTarget = null;
-		_SetMoveDirection( Vector3.zero );
-		
 		var flatBackNormal = (-m_lastHit.normal).WithY( 0f ).normalized;
 		m_climbPosition = transform.position + flatBackNormal *c_climbDistance;
 		
@@ -316,13 +323,6 @@ public class Player : CreatureBase {
 		if( castResult.IcebergPoint.HasValue ) {
 			m_climbPosition = castResult.IcebergPoint.Value;
 		}
-	}
-	
-	private void _StartClimbing() {
-		m_state = State.Climbing;
-		m_stateTimer = Time.time + TimingManager.ClimbTime;
-		
-		m_climbStart = transform.position;
 	}
 	
 	private void _ClimbMove() {
