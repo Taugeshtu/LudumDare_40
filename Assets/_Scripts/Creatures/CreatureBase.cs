@@ -94,9 +94,11 @@ public abstract class CreatureBase : IcebergEntity {
 			m_isInContact = true;
 			m_lastHit = closestHit;
 			
-			var newIceberg = icebergHit.collider.GetComponentInParent<Iceberg>();
-			if( newIceberg != Iceberg ) {
-				_ChangeIceberg( newIceberg );
+			if( icebergHit.collider != null ) {
+				var newIceberg = icebergHit.collider.GetComponentInParent<Iceberg>();
+				if( newIceberg != Iceberg ) {
+					_ChangeIceberg( newIceberg );
+				}
 			}
 		}
 		else {
