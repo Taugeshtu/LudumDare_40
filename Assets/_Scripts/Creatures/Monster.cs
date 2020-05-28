@@ -20,6 +20,10 @@ public class Monster : AICreature {
 		get { return (1 << Game.c_layerIceberg) + (1 << Game.c_layerWater); }	// Note: because Monster can swim can actually walk on monsters
 	}
 	
+	protected override bool _canJump {
+		get { return false; }
+	}
+	
 	public bool AliveAndActive {
 		get { return IsAlive && m_state == State.Hungry; }
 	}

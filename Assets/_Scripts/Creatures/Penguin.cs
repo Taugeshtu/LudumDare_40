@@ -19,6 +19,10 @@ public class Penguin : AICreature {
 		get { return (1 << Game.c_layerIceberg); }
 	}
 	
+	protected override bool _canJump {
+		get { return true; }
+	}
+	
 	private State m_state;
 	private Vector3 m_targetPosition;
 	

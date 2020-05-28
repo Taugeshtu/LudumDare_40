@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 
 public abstract class CreatureBase : IcebergEntity {
 	private static RaycastHit[] s_hits = new RaycastHit[5];
@@ -22,6 +23,7 @@ public abstract class CreatureBase : IcebergEntity {
 	protected bool m_isInContact;
 	protected RaycastHit m_lastHit;
 	private Vector3 m_moveDirection;
+	private Jump? m_jump;
 	
 	private Rigidbody m_rigid;
 	protected Rigidbody _rigidbody {
@@ -32,6 +34,8 @@ public abstract class CreatureBase : IcebergEntity {
 	}
 	
 	protected abstract int _layerMask { get; }
+	protected abstract bool _canJump { get; }
+	
 	private int _icebergMask {
 		get { return (1 << Game.c_layerIceberg); }
 	}
@@ -45,8 +49,18 @@ public abstract class CreatureBase : IcebergEntity {
 	}
 	
 	void FixedUpdate() {
-		_Move();
-		_ProcessContact();
+		_ProcessContact();	// Note: not sure if putting it before Move() will break things or not
+		
+		if( m_jump == null ) {
+			m_jump = _FindJump();
+		}
+		
+		if( m_jump == null ) {
+			_Move();
+		}
+		else {
+			_ExecuteJump();
+		}
 		
 		if( m_positionsHistory.Count == 0 ) {
 			m_positionsHistory.Enqueue( transform.position );
@@ -105,6 +119,66 @@ public abstract class CreatureBase : IcebergEntity {
 			if( IsAlive ) {
 				_rigidbody.AddForce( Physics.gravity, ForceMode.Acceleration );
 			}
+		}
+	}
+	
+	private Jump? _FindJump() {
+		if( !m_isInContact ) {
+			return null;
+		}
+		
+		Physics.queriesHitBackfaces = true;
+		
+		var maxJumpDistance = 5f;
+		var castDirection = m_moveDirection.normalized;
+		var maxJumpHeight = 1f;
+		var maxDrop = 2f;
+		
+		var planeRay = new Ray( m_lastHit.point - Vector3.up *0.2f, castDirection );
+		var hitsCount = Physics.RaycastNonAlloc( planeRay, s_hits, maxJumpDistance, _layerMask );
+		
+		// to determine siding just use Vector3.Dot() against hit normal. Positive == backface
+		RaycastHit? backface = null;
+		RaycastHit? frontface = null;
+		// Note: potential problems space with not ordered hits and shit
+		for( var i = 0; i < hitsCount; i++ ) {
+			var hit = s_hits[i];
+			if( hit.normal.Dot( castDirection ) < 0 ) {
+				frontface = hit;
+			}
+			else {
+				backface = hit;
+			}
+		}
+		
+		if( frontface.HasValue ) {
+			var verticalRay = new Ray( frontface.Value.point + castDirection *0.2f + Vector3.up *maxJumpHeight, Vector3.down );
+			RaycastHit verticalHit;
+			if( Physics.Raycast( verticalRay, out verticalHit, maxJumpHeight + maxDrop, _layerMask ) ) {
+				return new Jump( transform.position, verticalHit.point, m_speed *0.2f );
+			}
+		}
+		
+		Physics.queriesHitBackfaces = false;
+		
+		return null;
+	}
+	
+	private void _ExecuteJump() {
+		var jumpPosition = m_jump.Value.CalculatePosition();
+		
+		// Eeeehhh?.. Either jump is defined as too short, or it doesn't progress far enough.
+		// Might also do with defining jump as local to transform, since drift is a bitch
+		
+		if( jumpPosition.HasValue ) {
+			_rigidbody.isKinematic = true;
+			transform.position = jumpPosition.Value;
+			Debug.LogError( "Jump exec!" );
+		}
+		else {
+			m_jump = null;
+			_rigidbody.isKinematic = false;
+			Debug.LogError( "Jump done!" );
 		}
 	}
 	

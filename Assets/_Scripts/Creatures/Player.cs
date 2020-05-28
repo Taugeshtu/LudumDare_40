@@ -67,6 +67,10 @@ public class Player : CreatureBase {
 		get { return (1 << Game.c_layerIceberg) + (1 << Game.c_layerCreature); }	// Note: because Player can actually walk on monsters
 	}
 	
+	protected override bool _canJump {
+		get { return true; }
+	}
+	
 	private bool _primaryKeyPressed {
 		get { return (Input.GetAxis( "Fire1" ) > 0.1f); }
 	}
