@@ -1,6 +1,8 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 
+using DrawUtils = Draw;
+
 public struct Jump {
 	private const float c_unpausedJumpDistance = 1f;
 	private const float c_pausePerMeter = 0.1f;
@@ -29,17 +31,29 @@ public struct Jump {
 		}
 	}
 	
-	private float _jumpDuration {
-		get { return _duration - _pauseDuration; }
+	private Vector3 _verticalDiff {
+		get {
+			return (m_target - m_origin).ProjectedOn( Vector3.up );
+		}
+	}
+	
+	private Vector3 _horizontalDiff {
+		get {
+			return (m_target - m_origin).Flat( Vector3.up );
+		}
 	}
 	
 #region Implementation
-	public Jump( Vector3 origin, Vector3 target, float speed ) {
+	public Jump( Vector3 origin, Vector3 target, float speed, bool draw = false ) {
 		m_origin = origin;
 		m_target = target;
 		
 		m_speed = speed;
 		m_startTime = Time.time;
+		
+		if( draw ) {
+			Draw();
+		}
 	}
 #endregion
 	
@@ -57,15 +71,41 @@ public struct Jump {
 			return null;
 		}
 		
-		var progress = Mathf.InverseLerp( m_startTime + _pauseDuration, endTime, Time.time );
-		// TODO: proper arc here!
-		
-		return Vector3.Lerp( m_origin, m_target, progress );
+		var factor = Mathf.InverseLerp( m_startTime + _pauseDuration, endTime, Time.time );
+		return _CalculateForFactor( factor );
+	}
+	
+	public void Draw() {
+		for( var i = 1; i <= 10; i++ ) {
+			var previous = _CalculateForFactor( (i - 1) /10f );
+			var current = _CalculateForFactor( i /10f );
+			
+			DrawUtils.RayFromTo( previous, current, Palette.orange, 0.1f, 3 );
+		}
 	}
 #endregion
 	
 	
 #region Private
+	private Vector3 _CalculateForFactor( float factor ) {
+		// given that y = high - (x - distanceToHigh)^2, and it passes through
+		// (0, 0) == origin; (hDiff, vDiff) == target
+		// find arc constants:
+		var vDiff = Vector3.up.Dot( _verticalDiff );
+		var hDiff = _horizontalDiff.magnitude;
+		
+		var distanceToHigh = (vDiff + hDiff *hDiff) / (2 *hDiff);
+		var high = distanceToHigh *distanceToHigh;
+		
+		// find position on an arc:
+		var x = hDiff *factor;
+		var y = high - ((x - distanceToHigh) *(x - distanceToHigh));
+		
+		// morph x to emulate drag:
+		x = hDiff *Sin.Lerp( factor, SinShape.CRising );
+		
+		return m_origin + Vector3.up *y + _horizontalDiff.normalized *x;
+	}
 #endregion
 	
 	

@@ -181,7 +181,6 @@ public abstract class CreatureBase : IcebergEntity {
 			return new Jump( transform.position, hit.point, jumpSpeed );
 		}
 		
-		// now that jump is fixed it's all about distance (lead), and speed diff
 		var speedDiff = jumpSpeed - iceberg.Drift.magnitude;
 		if( speedDiff < 0 ) {
 			Debug.LogError( "Null-jump, can't catch up to target" );
