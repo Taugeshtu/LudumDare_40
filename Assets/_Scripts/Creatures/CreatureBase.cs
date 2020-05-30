@@ -152,16 +152,50 @@ public abstract class CreatureBase : IcebergEntity {
 		}
 		
 		if( frontface.HasValue ) {
+			Draw.Cross( frontface.Value.point, Palette.pink, 1f, 3f );
+			
 			var verticalRay = new Ray( frontface.Value.point + castDirection *0.2f + Vector3.up *maxJumpHeight, Vector3.down );
 			RaycastHit verticalHit;
 			if( Physics.Raycast( verticalRay, out verticalHit, maxJumpHeight + maxDrop, _layerMask ) ) {
-				return new Jump( transform.position, verticalHit.point, m_speed *0.2f );
+				return _PredictJump( verticalHit );
 			}
 		}
 		
 		Physics.queriesHitBackfaces = false;
 		
 		return null;
+	}
+	
+	private Jump _PredictJump( RaycastHit hit ) {
+		var jumpSpeed = m_speed *0.8f;
+		
+		var iceberg = hit.collider.GetComponentInParent<Iceberg>();
+		if( iceberg == null ) {
+			var icebergEntity = hit.collider.GetComponentInParent<IcebergEntity>();
+			if( icebergEntity != null ) {
+				iceberg = icebergEntity.Iceberg;
+			}
+		}
+		
+		if( iceberg == null ) {
+			return new Jump( transform.position, hit.point, jumpSpeed );
+		}
+		
+		// now that jump is fixed it's all about distance (lead), and speed diff
+		var speedDiff = jumpSpeed - iceberg.Drift.magnitude;
+		if( speedDiff < 0 ) {
+			Debug.LogError( "Null-jump, can't catch up to target" );
+			return new Jump( transform.position, transform.position, jumpSpeed );
+		}
+		
+		var diffToTarget = hit.point - transform.position;
+		var catchUpTime = diffToTarget.magnitude /speedDiff;
+		
+		var correctedPoint = transform.position + diffToTarget.normalized *jumpSpeed *catchUpTime;
+		
+		Draw.RayFromToCross( transform.position, correctedPoint, Palette.darkRed, 1f, 3f );
+		
+		return new Jump( transform.position, correctedPoint, jumpSpeed );
 	}
 	
 	private void _ExecuteJump() {

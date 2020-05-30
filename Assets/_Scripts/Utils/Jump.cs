@@ -15,15 +15,22 @@ public struct Jump {
 		get { return Vector3.Distance( m_origin, m_target ); }
 	}
 	
+	private float _duration {
+		get { return _distance /m_speed; }
+	}
+	
 	private float _pauseDuration {
 		get {
 			if( _distance < c_unpausedJumpDistance ) { return 0f; }
-			return _distance *c_pausePerMeter;
+			
+			var pauseDuration = _distance *c_pausePerMeter;
+			var pauseFraction = Mathf.Atan( pauseDuration ) /Mathf.PI;
+			return _duration *pauseFraction;
 		}
 	}
 	
 	private float _jumpDuration {
-		get { return _distance /m_speed; }
+		get { return _duration - _pauseDuration; }
 	}
 	
 #region Implementation
@@ -45,7 +52,7 @@ public struct Jump {
 			return m_origin;
 		}
 		
-		var endTime = m_startTime + _pauseDuration + _jumpDuration;
+		var endTime = m_startTime + _duration;
 		if( Time.time > endTime ) {
 			return null;
 		}

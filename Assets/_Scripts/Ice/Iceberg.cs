@@ -22,6 +22,8 @@ public class Iceberg : MonoBehaviour {
 	public IList<Monster> Monsters { get { return m_monsters; } }
 	public Player Player { get; private set; }
 	
+	public Vector3 Drift { get { return m_drift; } }
+	
 #region Implementation
 	void Update() {
 		if( Player == null ) {
@@ -207,9 +209,8 @@ public class Iceberg : MonoBehaviour {
 	private void _ProcessDrift() {
 		var driftFactor = Mathf.InverseLerp( m_driftStartTime, m_driftStartTime + m_driftBuildupTime, Time.time );
 		driftFactor = Mathf.Clamp01( driftFactor );
-		// var speed = Mathf.Sin( driftFactor *Mathf.PI /2 ) *m_maxSpeed;
-		var speed = driftFactor *driftFactor *driftFactor *m_maxSpeed;
-		m_velocity = m_drift.normalized *speed;
+		var speed = driftFactor *driftFactor *driftFactor;
+		m_velocity = m_drift *speed;
 		
 		transform.position += m_velocity *Time.fixedDeltaTime;
 		transform.rotation *= Quaternion.AngleAxis( m_turnSpeed *Time.fixedDeltaTime, Vector3.up );
