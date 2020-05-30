@@ -129,7 +129,7 @@ public abstract class CreatureBase : IcebergEntity {
 		
 		Physics.queriesHitBackfaces = true;
 		
-		var maxJumpDistance = 5f;
+		var maxJumpDistance = 2.5f;
 		var castDirection = m_moveDirection.normalized;
 		var maxJumpHeight = 1f;
 		var maxDrop = 2f;
@@ -199,23 +199,21 @@ public abstract class CreatureBase : IcebergEntity {
 	
 	private void _ExecuteJump() {
 		var jumpPosition = m_jump.Value.CalculatePosition();
-		
-		// Eeeehhh?.. Either jump is defined as too short, or it doesn't progress far enough.
-		// Might also do with defining jump as local to transform, since drift is a bitch
-		
 		if( jumpPosition.HasValue ) {
 			_rigidbody.isKinematic = true;
-			transform.position = jumpPosition.Value;
-			Debug.LogError( "Jump exec!" );
+			_rigidbody.MovePosition( jumpPosition.Value );
 		}
 		else {
 			m_jump = null;
 			_rigidbody.isKinematic = false;
-			Debug.LogError( "Jump done!" );
 		}
 	}
 	
 	private void _UpdateTurn() {
+		if( m_positionsHistory.Count < 2 ) {
+			return;
+		}
+		
 		var totalDiff = Vector2.zero;
 		var index = 0;
 		var previous = Vector3.zero;
@@ -231,7 +229,7 @@ public abstract class CreatureBase : IcebergEntity {
 		
 		if( totalDiff.magnitude > 0.01f ) {
 			// TODO: slerp here!
-			transform.rotation = Quaternion.LookRotation( totalDiff.X0Y(), Vector3.up );
+			_rigidbody.MoveRotation( Quaternion.LookRotation( totalDiff.X0Y(), Vector3.up ) );
 		}
 	}
 	

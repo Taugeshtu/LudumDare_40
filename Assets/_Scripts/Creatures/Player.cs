@@ -8,7 +8,7 @@ public class Player : CreatureBase {
 	private const float c_moveTrimStartTime = 0.3f;
 	private const float c_moveTrimDuration = 0.5f;
 	private const float c_climbDistance = 1f;
-	private const float c_playerHeight = 1.5f;
+	private const float c_playerHeight = 1.8f;
 	
 	private enum State {
 		Walking,
@@ -60,6 +60,7 @@ public class Player : CreatureBase {
 	private Vector3? m_motionTarget;
 	
 	private bool m_wasInContact = false;
+	private Quaternion m_fallStartRotation;
 	private Vector3 m_climbPosition;
 	private Vector3 m_climbStart;
 	
@@ -148,6 +149,10 @@ public class Player : CreatureBase {
 			}
 			
 			m_wasInContact = m_isInContact;
+		}
+		
+		if( m_state == State.Falling ) {
+			_Fall();
 		}
 		
 		// climbing motion
@@ -329,6 +334,28 @@ public class Player : CreatureBase {
 		if( castResult.IcebergPoint.HasValue ) {
 			m_climbPosition = castResult.IcebergPoint.Value;
 		}
+		
+		m_fallStartRotation = transform.rotation;
+		
+		m_positionsHistory.Clear();
+	}
+	
+	private void _Fall() {
+		var verticalDiff = (m_climbPosition - transform.position).y;
+		var factor = Mathf.InverseLerp( 0f, c_playerHeight *0.7f, verticalDiff );
+		
+		// TODO: determine desired orientation!
+		var desiredForward = (m_climbPosition - transform.position).Flat( Vector3.up );
+		var turnCompletionFraction = 0.9f;
+		
+		var fallStartForward = m_fallStartRotation *Vector3.forward;
+		var desiredRotation = Quaternion.FromToRotation( fallStartForward, desiredForward );
+		
+		var usedFactor = Sin.Lerp( factor, SinShape.CRising ) *turnCompletionFraction;
+		var rotation = Quaternion.Slerp( m_fallStartRotation, m_fallStartRotation *desiredRotation, usedFactor );
+		_rigidbody.MoveRotation( rotation );
+		
+		m_positionsHistory.Clear();
 	}
 	
 	private void _ClimbMove() {
@@ -346,6 +373,8 @@ public class Player : CreatureBase {
 			
 			Debug.LogError( "Climbing vertical, local factor: "+localFactor );
 			Draw.RayFromToCross( m_climbStart, m_climbStart + verticalComponent, Palette.red, 0.5f );
+			
+			m_positionsHistory.Clear();
 		}
 		else {
 			var localFactor = Mathf.InverseLerp( breakPoint, 1f, timeFactor );
