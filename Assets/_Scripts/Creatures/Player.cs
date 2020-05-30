@@ -165,8 +165,7 @@ public class Player : CreatureBase {
 		if( m_motionTarget.HasValue ) {
 			var positionDiff = (m_motionTarget.Value - transform.position).WithY( 0f );
 			if( positionDiff.magnitude < 0.1f ) {
-				m_motionTarget = null;
-				_SetMoveDirection( Vector3.zero );
+				_StopMovement();
 			}
 		}
 		
@@ -182,6 +181,10 @@ public class Player : CreatureBase {
 	private void _ProcessActions( CastResult castResult ) {
 		var attackKeyPressed = _primaryKeyPressed;
 		var splitKeyPressed = _secondaryKeyPressed;
+		
+		if( _isJumping ) {
+			_StopMovement();
+		}
 		
 		if( m_state == State.Walking ) {
 			if( splitKeyPressed ) {
@@ -265,8 +268,7 @@ public class Player : CreatureBase {
 			}
 		}
 		else {
-			m_motionTarget = null;
-			_SetMoveDirection( arrowMove );
+			_StopMovement();
 		}
 	}
 	
@@ -299,8 +301,7 @@ public class Player : CreatureBase {
 		m_stateTimer = Time.time + stateTime;
 		
 		if( state != State.Walking ) {
-			m_motionTarget = null;
-			_SetMoveDirection( Vector3.zero );
+			_StopMovement();
 		}
 	}
 	
@@ -461,6 +462,11 @@ public class Player : CreatureBase {
 		direction = direction.normalized *newMag;
 		point = transform.position + direction;
 		return new ValueTuple<Vector3, Vector3>( point, direction );
+	}
+	
+	private void _StopMovement() {
+		m_motionTarget = null;
+		_SetMoveDirection( Vector3.zero );
 	}
 #endregion
 }

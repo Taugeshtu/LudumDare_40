@@ -33,6 +33,8 @@ public abstract class CreatureBase : IcebergEntity {
 		}
 	}
 	
+	protected bool _isJumping { get { return m_jump.HasValue; } }
+	
 	protected abstract int _layerMask { get; }
 	protected abstract bool _canJump { get; }
 	
