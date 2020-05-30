@@ -211,6 +211,7 @@ public class Player : CreatureBase {
 				m_state = State.Walking;
 			}
 			else if( m_state == State.Climbing ) {
+				_rigidbody.isKinematic = false;
 				m_state = State.Walking;
 			}
 		}
@@ -279,6 +280,7 @@ public class Player : CreatureBase {
 			case State.Climbing:
 				stateTime = TimingManager.ClimbTime;
 				m_climbStart = transform.position;
+				_rigidbody.isKinematic = true;
 				break;
 		}
 		
