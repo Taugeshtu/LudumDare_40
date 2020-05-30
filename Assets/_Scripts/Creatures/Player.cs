@@ -343,6 +343,8 @@ public class Player : CreatureBase {
 		
 		m_fallStartRotation = transform.rotation;
 		
+		_rigidbody.position = _rigidbody.position - flatBackNormal *0.2f;
+		
 		m_positionsHistory.Clear();
 	}
 	
