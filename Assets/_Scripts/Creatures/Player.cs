@@ -198,6 +198,12 @@ public class Player : CreatureBase {
 		
 		if( (m_state == State.ChargingSplit) && !splitKeyPressed ) {
 			m_state = State.Walking;
+			
+			var splitStartTime = m_stateTimer - TimingManager.ChargeTime;
+			var usedTime = Time.time - splitStartTime;
+			
+			m_skeletool.StopAll();
+			m_skeletool.GoIdle( m_splitCurve2, usedTime *0.7f );
 		}
 		
 		if( Time.time > m_stateTimer ) {
@@ -344,7 +350,6 @@ public class Player : CreatureBase {
 		var verticalDiff = (m_climbPosition - transform.position).y;
 		var factor = Mathf.InverseLerp( 0f, c_playerHeight *0.7f, verticalDiff );
 		
-		// TODO: determine desired orientation!
 		var desiredForward = (m_climbPosition - transform.position).Flat( Vector3.up );
 		var turnCompletionFraction = 0.9f;
 		
