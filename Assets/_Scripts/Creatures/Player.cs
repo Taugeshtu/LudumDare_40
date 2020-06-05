@@ -178,6 +178,39 @@ public class Player : CreatureBase {
 		base._ChangeIceberg( newIceberg );
 	}
 	
+	protected override Quaternion _GetRotation() {
+		if( m_state == State.Walking ) {
+			return base._GetRotation();
+		}
+		else if( m_state == State.ChargingSplit ) {
+			// TODO: clean up mess with m_positionsHistory access here!
+			m_positionsHistory.Clear();	// Not happy with this hack!
+			
+			var cut = _GetCut();
+			var desiredRotation = Quaternion.LookRotation( cut.Item2, Vector3.up );
+			var angleDiff = Vector3.Angle( transform.forward, cut.Item2 );
+			var maxAngleTurnPerSecond = 180f;
+			var factor = Time.deltaTime /(angleDiff /maxAngleTurnPerSecond);
+			return Quaternion.Slerp( _rigidbody.rotation, desiredRotation, factor );
+		}
+		else if( m_state == State.Falling ) {
+			var verticalDiff = (m_climbPosition - transform.position).y;
+			var factor = Mathf.InverseLerp( 0f, c_playerHeight *0.7f, verticalDiff );
+			
+			var desiredForward = (m_climbPosition - transform.position).Flat( Vector3.up );
+			var turnCompletionFraction = 0.9f;
+			
+			var fallStartForward = m_fallStartRotation *Vector3.forward;
+			var desiredRotation = Quaternion.FromToRotation( fallStartForward, desiredForward );
+			
+			var usedFactor = Sin.Lerp( factor, SinShape.CRising ) *turnCompletionFraction;
+			return Quaternion.Slerp( m_fallStartRotation, m_fallStartRotation *desiredRotation, usedFactor );
+		}
+		else {
+			return base._GetRotation();
+		}
+	}
+	
 	private void _ProcessActions( CastResult castResult ) {
 		var attackKeyPressed = _primaryKeyPressed;
 		var splitKeyPressed = _secondaryKeyPressed;
@@ -350,19 +383,6 @@ public class Player : CreatureBase {
 	}
 	
 	private void _Fall() {
-		var verticalDiff = (m_climbPosition - transform.position).y;
-		var factor = Mathf.InverseLerp( 0f, c_playerHeight *0.7f, verticalDiff );
-		
-		var desiredForward = (m_climbPosition - transform.position).Flat( Vector3.up );
-		var turnCompletionFraction = 0.9f;
-		
-		var fallStartForward = m_fallStartRotation *Vector3.forward;
-		var desiredRotation = Quaternion.FromToRotation( fallStartForward, desiredForward );
-		
-		var usedFactor = Sin.Lerp( factor, SinShape.CRising ) *turnCompletionFraction;
-		var rotation = Quaternion.Slerp( m_fallStartRotation, m_fallStartRotation *desiredRotation, usedFactor );
-		_rigidbody.MoveRotation( rotation );
-		
 		m_positionsHistory.Clear();
 	}
 	
@@ -456,7 +476,7 @@ public class Player : CreatureBase {
 		var ray = Camera.main.ScreenPointToRay( Input.mousePosition );
 		var point = plane.Cast( ray );
 		var diff = point - transform.position;
-		var direction = (diff).normalized.XZ().X0Y();
+		var direction = (diff).normalized.WithY( 0f );
 		
 		var newMag = Mathf.Clamp( direction.magnitude, 0.5f, m_splitReach );
 		direction = direction.normalized *newMag;

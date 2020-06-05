@@ -212,27 +212,8 @@ public abstract class CreatureBase : IcebergEntity {
 	}
 	
 	private void _UpdateTurn() {
-		if( m_positionsHistory.Count < 2 ) {
-			return;
-		}
-		
-		var totalDiff = Vector2.zero;
-		var index = 0;
-		var previous = Vector3.zero;
-		foreach( var position in m_positionsHistory ) {
-			if( index != 0 ) {
-				var diff = position - previous;
-				totalDiff += diff.XZ() * index;	// TODO: investigate WHYYYY is it scaled by depth?..
-			}
-			
-			index += 1;
-			previous = position;
-		}
-		
-		if( totalDiff.magnitude > 0.01f ) {
-			// TODO: slerp here!
-			_rigidbody.MoveRotation( Quaternion.LookRotation( totalDiff.X0Y(), Vector3.up ) );
-		}
+		var newRotation = _GetRotation();
+		_rigidbody.MoveRotation( newRotation );
 	}
 	
 	private void _ReachNewVelocity( Vector3 newVelocity ) {
@@ -276,6 +257,31 @@ public abstract class CreatureBase : IcebergEntity {
 	protected virtual void _ChangeIceberg( Iceberg newIceberg ) {
 		Iceberg.RemoveEntity( this );
 		newIceberg.AddEntity( this );
+	}
+	
+	protected virtual Quaternion _GetRotation() {
+		if( m_positionsHistory.Count < 2 ) {
+			return _rigidbody.rotation;
+		}
+		
+		var totalDiff = Vector2.zero;
+		var index = 0;
+		var previous = Vector3.zero;
+		foreach( var position in m_positionsHistory ) {
+			if( index != 0 ) {
+				var diff = position - previous;
+				totalDiff += diff.XZ() * index;	// TODO: investigate WHYYYY is it scaled by depth?..
+			}
+			
+			index += 1;
+			previous = position;
+		}
+		
+		// TODO: slerp here!
+		if( totalDiff.magnitude > 0.01f ) {
+			return Quaternion.LookRotation( totalDiff.X0Y(), Vector3.up );
+		}
+		return _rigidbody.rotation;
 	}
 #endregion
 	
