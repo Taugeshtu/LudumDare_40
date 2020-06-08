@@ -301,7 +301,8 @@ public class Player : CreatureBase {
 			}
 		}
 		else {
-			_StopMovement();
+			m_motionTarget = null;
+			_SetMoveDirection( arrowMove );
 		}
 	}
 	
